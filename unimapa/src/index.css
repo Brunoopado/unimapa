@@ -291,3 +291,34 @@ input {
     max-width: 1180px;
   }
 }
+
+.location-card h2 {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.current-location.active {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  background: #ffffff;
+  color: #0b2f6b;
+}
+
+.current-location.active span {
+  color: #666;
+  font-size: 0.95rem;
+}
+
+.feedback-message {
+  margin-top: 12px;
+  color: #0033b3;
+  font-weight: 600;
+}
+
+.demo-codes {
+  margin-top: 10px;
+  color: #777;
+  font-size: 0.9rem;
+}
