@@ -3,7 +3,7 @@ import { Link } from "react-router-dom";
 
 function Home() {
   return (
-    <section className="page">
+    <section className="page home-page">
       <div className="location-card">
         <h2>Você está em:</h2>
 
@@ -19,23 +19,25 @@ function Home() {
         </div>
       </div>
 
-      <Link to="/map" className="home-card">
-        <QrCode size={64} />
-        <h3>Escanear QR Code</h3>
-        <p>Identifique sua localização atual no campus</p>
-      </Link>
+      <div className="home-actions">
+        <Link to="/map" className="home-card">
+          <QrCode size={64} />
+          <h3>Escanear QR Code</h3>
+          <p>Identifique sua localização atual no campus</p>
+        </Link>
 
-      <Link to="/search" className="home-card">
-        <Search size={64} />
-        <h3>Pesquisar Destino</h3>
-        <p>Encontre salas</p>
-      </Link>
+        <Link to="/search" className="home-card">
+          <Search size={64} />
+          <h3>Pesquisar Destino</h3>
+          <p>Encontre salas</p>
+        </Link>
 
-      <Link to="/map" className="home-card">
-        <Map size={64} />
-        <h3>Ver Mapa</h3>
-        <p>Visualizar mapa</p>
-      </Link>
+        <Link to="/map" className="home-card">
+          <Map size={64} />
+          <h3>Ver Mapa</h3>
+          <p>Visualizar mapa</p>
+        </Link>
+      </div>
     </section>
   );
 }

@@ -216,3 +216,78 @@ input {
 .bottom-nav-item.active {
   color: #0033b3;
 }
+
+.home-actions {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+/* Tablets e telas médias */
+@media (min-width: 768px) {
+  .app {
+    max-width: 900px;
+  }
+
+  .app-content {
+    padding: 32px;
+  }
+
+  .home-actions {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+  }
+
+  .home-card {
+    min-height: 220px;
+  }
+}
+
+/* Computadores */
+@media (min-width: 1024px) {
+  .app {
+    max-width: 1180px;
+  }
+
+  .app-content {
+    padding: 32px;
+  }
+
+  .home-page {
+    display: flex;
+    flex-direction: column;
+    gap: 24px;
+  }
+
+   .location-card {
+    display: grid;
+    grid-template-columns: 1fr 1.2fr auto 1.2fr;
+    align-items: center;
+    gap: 16px;
+  }
+
+  .location-card h2 {
+    margin-bottom: 0;
+  }
+
+  .separator {
+    margin: 0;
+  }
+
+  .code-row {
+    width: 100%;
+  }
+  .home-actions {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 24px;
+  }
+
+  .home-card {
+    min-height: 260px;
+  }
+
+  .bottom-nav {
+    max-width: 1180px;
+  }
+}
