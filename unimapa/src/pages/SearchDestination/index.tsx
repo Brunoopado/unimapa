@@ -1,3 +1,5 @@
+import { Search } from "lucide-react";
+
 function SearchDestination() {
   return (
     <section className="page">
@@ -5,7 +7,9 @@ function SearchDestination() {
 
       <div className="search-row">
         <input type="text" placeholder="Pesquisar destino..." />
-        <button type="button">🔍</button>
+        <button type="button" aria-label="Pesquisar destino">
+          <Search size={28} />
+        </button>
       </div>
 
       <div className="placeholder-card">
