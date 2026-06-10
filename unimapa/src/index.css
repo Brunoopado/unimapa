@@ -153,13 +153,20 @@ input {
   text-align: center;
 }
 
-.home-card svg {
-  background: #0033b3;
-  color: #ffffff;
+.home-card-icon {
   width: 92px;
   height: 92px;
-  padding: 20px;
   border-radius: 50%;
+  background: #0033b3;
+  color: #ffffff;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.home-card-icon svg {
+  display: block;
 }
 
 .home-card h3 {
@@ -231,8 +238,9 @@ input {
   }
 
   .app-content {
-    padding: 32px;
-  }
+  padding: 20px;
+  padding-bottom: 110px;
+}
 
   .home-actions {
     display: grid;

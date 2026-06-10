@@ -81,19 +81,25 @@ function Home() {
 
       <div className="home-actions">
         <Link to="/map" className="home-card">
-          <QrCode size={64} />
+          <span className="home-card-icon">
+            <QrCode size={52} />
+          </span>
           <h3>Escanear QR Code</h3>
           <p>Identifique sua localização atual no campus</p>
         </Link>
 
         <Link to="/search" className="home-card">
-          <Search size={64} />
+          <span className="home-card-icon">
+            <Search size={52} />
+          </span>
           <h3>Pesquisar Destino</h3>
           <p>Encontre salas</p>
         </Link>
 
         <Link to="/map" className="home-card">
-          <Map size={64} />
+          <span className="home-card-icon">
+            <Map size={52} />
+          </span>
           <h3>Ver Mapa</h3>
           <p>Visualizar mapa</p>
         </Link>
