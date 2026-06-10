@@ -56,9 +56,10 @@ input {
   letter-spacing: 4px;
 }
 
-.logo-mark {
-  color: #ff6b1a;
-  font-size: 1.6rem;
+.header-logo-image {
+  width: auto;
+  height: 46px;
+  object-fit: contain;
 }
 
 .header-settings {

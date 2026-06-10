@@ -1,11 +1,17 @@
 import { Settings } from "lucide-react";
 import { Link } from "react-router-dom";
+import logoUnifafibe from "../../assets/images/logo-unifafibe.png";
+
 
 function Header() {
   return (
     <header className="header">
       <Link to="/" className="header-logo">
-        <div className="logo-mark">▲</div>
+        <img
+          src={logoUnifafibe}
+          alt="Logo UNIFAFIBE"
+          className="header-logo-image"
+        />
         <span>UNIMAPA</span>
       </Link>
 
