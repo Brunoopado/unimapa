@@ -60,7 +60,7 @@ function Home() {
         <div className="code-row">
           <input
             type="text"
-            placeholder="Digite o código do ponto de referência..."
+            placeholder="Digite o código"
             value={referenceCode}
             onChange={(event) => setReferenceCode(event.target.value)}
             onKeyDown={(event) => {
