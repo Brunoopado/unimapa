@@ -331,3 +331,94 @@ input {
   color: #777;
   font-size: 0.9rem;
 }
+.map-page {
+  padding-bottom: 90px;
+}
+
+.map-page h1 {
+  margin-bottom: 16px;
+}
+
+.map-zoom-area {
+  width: 100%;
+  height: calc(100vh - 300px);
+  min-height: 360px;
+  background: #ffffff;
+  overflow: hidden;
+  position: relative;
+  border: none;
+  border-radius: 12px;
+}
+
+.map-transform-wrapper {
+  width: 100% !important;
+  height: 100% !important;
+}
+
+.map-transform-content {
+  width: 100%;
+  height: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.map-image {
+  width: 100%;
+  height: auto;
+  max-height: 100%;
+  object-fit: contain;
+  display: block;
+  user-select: none;
+  -webkit-user-drag: none;
+}
+
+.map-options-card {
+  margin-top: 14px;
+  background: #ffffff;
+  border-radius: 16px;
+  padding: 12px;
+}
+
+.route-choice-buttons {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 8px;
+  margin-bottom: 10px;
+}
+
+.route-choice-buttons button {
+  border: 1px solid #f4791d;
+  background: #ffffff;
+  color: #f4791d;
+  border-radius: 999px;
+  padding: 9px 8px;
+  font-size: 12px;
+  font-weight: 700;
+}
+
+.route-choice-buttons button.active {
+  background: #f4791d;
+  color: #ffffff;
+}
+
+.floor-choice-buttons {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 8px;
+}
+
+.floor-choice-buttons button {
+  border: 1px solid #0031a0;
+  background: #ffffff;
+  color: #0031a0;
+  border-radius: 999px;
+  padding: 9px 8px;
+  font-size: 13px;
+  font-weight: 700;
+}
+
+.floor-choice-buttons button.active {
+  background: #0031a0;
+  color: #ffffff;
+}
