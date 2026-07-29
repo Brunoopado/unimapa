@@ -388,9 +388,9 @@ input {
 }
 
 .route-choice-buttons button {
-  border: 1px solid #f4791d;
-  background: #ffffff;
-  color: #f4791d;
+  border: none;
+  background: #0031a0;
+  color: #ffffff;
   border-radius: 999px;
   padding: 9px 8px;
   font-size: 12px;
@@ -409,9 +409,9 @@ input {
 }
 
 .floor-choice-buttons button {
-  border: 1px solid #0031a0;
-  background: #ffffff;
-  color: #0031a0;
+  border: none;
+  background: #0031a0;
+  color: #ffffff;
   border-radius: 999px;
   padding: 9px 8px;
   font-size: 13px;
@@ -419,6 +419,6 @@ input {
 }
 
 .floor-choice-buttons button.active {
-  background: #0031a0;
+  background: #f4791d;
   color: #ffffff;
 }
