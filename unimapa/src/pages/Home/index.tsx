@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import { Map, MapPin, QrCode, Search } from "lucide-react";
 import { Link } from "react-router-dom";
-import { findReferencePointByCode } from "../../data/demoQrCodes";
+import { buscarQrPorCodigo } from "../../services/api";
 import {
   getCurrentLocation,
   saveCurrentLocation,
@@ -22,19 +22,39 @@ function Home() {
     }
   }, []);
 
-  function handleSaveLocation() {
-    const foundLocation = findReferencePointByCode(referenceCode);
+  async function handleSaveLocation() {
+  const codigo = referenceCode.trim();
 
-    if (!foundLocation) {
-      setMessage("Código não encontrado. Teste: P001, P002, P003 ou P004.");
-      return;
-    }
+  if (!codigo) {
+    setMessage("Digite um código de localização.");
+    return;
+  }
 
-    saveCurrentLocation(foundLocation);
-    setCurrentLocation(foundLocation);
+  try {
+    const resposta = await buscarQrPorCodigo(codigo);
+
+    const location: CurrentLocation = {
+      pointCode: resposta.codigoQr,
+      name: resposta.descricao,
+      floor: resposta.andar,
+    };
+
+    saveCurrentLocation(location);
+
+    setCurrentLocation(location);
     setReferenceCode("");
     setMessage("Localização salva com sucesso.");
+  } catch (error) {
+    console.error(
+      "Erro ao localizar QR Code:",
+      error
+    );
+
+    setMessage(
+      "Código não encontrado. Verifique o código informado."
+    );
   }
+}
 
   return (
     <section className="page home-page">
@@ -76,7 +96,10 @@ function Home() {
 
         {message && <p className="feedback-message">{message}</p>}
 
-        <p className="demo-codes">Códigos de teste: P001, P002, P003, P004</p>
+        <p className="demo-codes">
+          Códigos disponíveis para teste:
+          QR_3_01, QR_3_02, QR_3_03, QR_3_04, QR_3_05
+        </p>
       </div>
 
       <div className="home-actions">
