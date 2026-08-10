@@ -422,3 +422,67 @@ input {
   background: #f4791d;
   color: #ffffff;
 }
+
+/* Resultado da pesquisa de destinos */
+.destination-result {
+  width: 100%;
+  padding: 14px 18px;
+
+  background: #ffffff;
+  border: 1px solid #d7dce5;
+  border-radius: 10px;
+
+  text-align: left;
+  font: inherit;
+  color: #003b7a;
+
+  cursor: pointer;
+
+  transition:
+    background-color 0.2s ease,
+    border-color 0.2s ease,
+    transform 0.2s ease,
+    box-shadow 0.2s ease;
+}
+
+.destination-result:hover {
+  background: #f4f7ff;
+  border-color: #0047bb;
+
+  transform: translateY(-1px);
+
+  box-shadow: 0 3px 8px rgba(0, 45, 110, 0.12);
+}
+
+.destination-result:active {
+  transform: translateY(0);
+}
+
+.destination-result:focus-visible {
+  outline: 3px solid rgba(0, 71, 187, 0.25);
+  outline-offset: 2px;
+}
+
+.destination-result p {
+  margin: 0;
+}
+
+.destination-result strong {
+  display: block;
+
+  color: #003b7a;
+  font-size: 1rem;
+  font-weight: 600;
+}
+
+.destination-result p:last-child {
+  margin-top: 4px;
+
+  color: #666666;
+  font-size: 0.9rem;
+  font-weight: 400;
+}
+
+.destination-result + .destination-result {
+  margin-top: 10px;
+}
