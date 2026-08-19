@@ -21,10 +21,30 @@ export type AndarRota = {
   viewBox: ViewBoxMapa;
 };
 
-export type RotaCalculada = {
-  status: string;
-  origem: string;
-  destino: string;
+export type TrechoRota = {
   andar: AndarRota;
   caminho: PontoRota[];
+};
+
+export type TransicaoRota = {
+  deAndar: number;
+  paraAndar: number;
+  pontoSaida: PontoRota;
+  pontoEntrada: PontoRota;
+};
+
+export type RotaCalculada = {
+  status: string;
+
+  codigoQr: string;
+  idDestino: string;
+
+  origem: string;
+  destino: string;
+
+  totalTrechos: number;
+
+  trechos: TrechoRota[];
+
+  transicoes: TransicaoRota[];
 };

@@ -436,35 +436,103 @@ app.post("/api/rotas/calcular", async (req, res) => {
       }
     );
 
-    // 8. Descobrir qual planta deve ser utilizada
-    const idAndar =
-      caminhoComCoordenadas[0].idAndar;
+    // 8. Buscar informações de todos os andares
+    const [andares] = await pool.query(
+      `
+        SELECT
+          id_andar,
+          nome,
+          arquivo_svg,
+          viewbox_largura,
+          viewbox_altura
+        FROM andar
+        WHERE ativo = TRUE
+      `
+    );
 
-    const [resultadoAndar] =
-      await pool.execute(
-        `
-          SELECT
-            id_andar,
-            nome,
-            arquivo_svg,
-            viewbox_largura,
-            viewbox_altura
-          FROM andar
-          WHERE id_andar = ?
-          LIMIT 1
-        `,
-        [idAndar]
+    const andaresPorId = new Map();
+
+    for (const andar of andares) {
+      andaresPorId.set(
+        andar.id_andar,
+        andar
       );
+    }
 
-    if (resultadoAndar.length === 0) {
-      return res.status(404).json({
-        status: "erro",
-        mensagem: "Andar não encontrado.",
+    // 9. Separar o caminho em trechos por andar
+    const trechos = [];
+
+    for (const ponto of caminhoComCoordenadas) {
+      const ultimoTrecho =
+        trechos[trechos.length - 1];
+
+      /*
+        Se ainda não existe trecho ou se o ponto
+        pertence a outro andar, começa um novo trecho.
+      */
+      if (
+        !ultimoTrecho ||
+        ultimoTrecho.andar.id !== ponto.idAndar
+      ) {
+        const andar =
+          andaresPorId.get(ponto.idAndar);
+
+        if (!andar) {
+          throw new Error(
+            `Andar ${ponto.idAndar} não encontrado.`
+          );
+        }
+
+        trechos.push({
+          andar: {
+            id: andar.id_andar,
+            nome: andar.nome,
+            arquivoSvg: andar.arquivo_svg,
+
+            viewBox: {
+              minX: 0,
+              minY: 0,
+              largura: Number(
+                andar.viewbox_largura
+              ),
+              altura: Number(
+                andar.viewbox_altura
+              ),
+            },
+          },
+
+          caminho: [ponto],
+        });
+      } else {
+        ultimoTrecho.caminho.push(ponto);
+      }
+    }
+
+    // 10. Identificar as trocas de andar
+    const transicoes = [];
+
+    for (let i = 0; i < trechos.length - 1; i++) {
+      const trechoAtual = trechos[i];
+      const proximoTrecho = trechos[i + 1];
+
+      const pontoSaida =
+        trechoAtual.caminho[
+          trechoAtual.caminho.length - 1
+        ];
+
+      const pontoEntrada =
+        proximoTrecho.caminho[0];
+
+      transicoes.push({
+        deAndar: trechoAtual.andar.id,
+        paraAndar: proximoTrecho.andar.id,
+
+        pontoSaida,
+        pontoEntrada,
       });
     }
 
-    const andar = resultadoAndar[0];
-
+    // 11. Responder a rota
     return res.json({
       status: "ok",
 
@@ -474,24 +542,11 @@ app.post("/api/rotas/calcular", async (req, res) => {
       origem: origemId,
       destino: destinoId,
 
-      andar: {
-        id: andar.id_andar,
-        nome: andar.nome,
-        arquivoSvg: andar.arquivo_svg,
+      totalTrechos: trechos.length,
 
-        viewBox: {
-          minX: 0,
-          minY: 0,
-          largura: Number(
-            andar.viewbox_largura
-          ),
-          altura: Number(
-            andar.viewbox_altura
-          ),
-        },
-      },
+      trechos,
 
-      caminho: caminhoComCoordenadas,
+      transicoes,
     });
   } catch (error) {
     console.error(error);

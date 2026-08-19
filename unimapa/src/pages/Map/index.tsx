@@ -1,5 +1,8 @@
 import { useEffect, useState } from "react";
-import { TransformWrapper, TransformComponent } from "react-zoom-pan-pinch";
+import {
+  TransformWrapper,
+  TransformComponent,
+} from "react-zoom-pan-pinch";
 import { useSearchParams } from "react-router-dom";
 import { calcularRota } from "../../services/api";
 import type { RotaCalculada } from "../../types/rota";
@@ -7,76 +10,190 @@ import type { RotaCalculada } from "../../types/rota";
 type Andar = "Térreo" | "1º" | "2º" | "3º";
 type TipoRota = "Rampa" | "Elevador" | "Escada";
 
+/*
+  O backend retorna nomes como:
+  "2º Andar"
+  "3º Andar"
+
+  Mas os botões mostram:
+  "2º"
+  "3º"
+
+  Esta função converte o nome vindo do backend
+  para o formato utilizado pela interface.
+*/
+function obterLabelAndar(nomeAndar: string): Andar | null {
+  if (nomeAndar.startsWith("Térreo")) {
+    return "Térreo";
+  }
+
+  if (nomeAndar.startsWith("1º")) {
+    return "1º";
+  }
+
+  if (nomeAndar.startsWith("2º")) {
+    return "2º";
+  }
+
+  if (nomeAndar.startsWith("3º")) {
+    return "3º";
+  }
+
+  return null;
+}
+
 function Map() {
   const [searchParams] = useSearchParams();
 
   const codigoQr = searchParams.get("codigoQr");
   const idDestino = searchParams.get("idDestino");
-  
-  const [rota, setRota] = useState<RotaCalculada | null>(null);
 
-  const pontosPolyline = rota
-  ? rota.caminho
-      .map((ponto) => `${ponto.x},${ponto.y}`)
-      .join(" ")
-  : "";
+  const [rota, setRota] =
+    useState<RotaCalculada | null>(null);
 
+  const [andarSelecionado, setAndarSelecionado] =
+    useState<Andar>("3º");
+
+  const [tipoRota, setTipoRota] =
+    useState<TipoRota>("Rampa");
+
+  /*
+    Descobre qual trecho da rota corresponde
+    ao andar selecionado pelo usuário.
+  */
+  const indiceTrechoAtual =
+    rota?.trechos.findIndex((trecho) => {
+      const labelAndar = obterLabelAndar(
+        trecho.andar.nome
+      );
+
+      return labelAndar === andarSelecionado;
+    }) ?? -1;
+
+  /*
+    Trecho que será exibido atualmente no mapa.
+  */
+  const trechoAtual =
+    rota && indiceTrechoAtual >= 0
+      ? rota.trechos[indiceTrechoAtual]
+      : null;
+
+  /*
+    Converte os pontos do trecho atual
+    para o formato utilizado pela polyline SVG.
+  */
+  const pontosPolyline = trechoAtual
+    ? trechoAtual.caminho
+        .map(
+          (ponto) =>
+            `${ponto.x},${ponto.y}`
+        )
+        .join(" ")
+    : "";
+
+  /*
+    "Você está aqui" aparece somente
+    no primeiro trecho da rota.
+  */
+  const pontoPartida =
+    trechoAtual &&
+    indiceTrechoAtual === 0 &&
+    trechoAtual.caminho.length > 0
+      ? trechoAtual.caminho[0]
+      : null;
+
+  /*
+    O pin "Chegada" aparece somente
+    no último trecho da rota.
+  */
   const pontoDestino =
-  rota && rota.caminho.length > 0
-    ? rota.caminho[rota.caminho.length - 1]
-    : null;
-
-    const pontoPartida =
-  rota && rota.caminho.length > 0
-    ? rota.caminho[0]
-    : null;
+    trechoAtual &&
+    rota &&
+    indiceTrechoAtual ===
+      rota.trechos.length - 1 &&
+    trechoAtual.caminho.length > 0
+      ? trechoAtual.caminho[
+          trechoAtual.caminho.length - 1
+        ]
+      : null;
 
   useEffect(() => {
-  async function carregarRota() {
-    try {
-      if (!codigoQr || !idDestino) {
-        return;
+    async function carregarRota() {
+      try {
+        if (!codigoQr || !idDestino) {
+          return;
+        }
+
+        const resultado = await calcularRota(
+          codigoQr,
+          idDestino
+        );
+
+        console.log(
+          "ROTA RECEBIDA DO BACKEND:"
+        );
+        console.log(resultado);
+
+        setRota(resultado);
+
+        /*
+          Quando a rota carregar, o mapa
+          começa automaticamente no andar
+          onde o usuário está.
+        */
+        if (resultado.trechos.length > 0) {
+          const primeiroAndar =
+            obterLabelAndar(
+              resultado.trechos[0].andar.nome
+            );
+
+          if (primeiroAndar) {
+            setAndarSelecionado(
+              primeiroAndar
+            );
+          }
+        }
+      } catch (error) {
+        console.error(
+          "Erro ao buscar rota:",
+          error
+        );
       }
-
-      const resultado = await calcularRota(
-        codigoQr,
-        idDestino
-      );
-
-      console.log("ROTA RECEBIDA DO BACKEND:");
-      console.log(resultado);
-
-      setRota(resultado);
-
-    } catch (error) {
-      console.error(
-        "Erro ao buscar rota:",
-        error
-      );
     }
-  }
 
-  carregarRota();
-}, [codigoQr, idDestino]);
-  const [andarSelecionado, setAndarSelecionado] = useState<Andar>("3º");
-  const [tipoRota, setTipoRota] = useState<TipoRota>("Rampa");
+    carregarRota();
+  }, [codigoQr, idDestino]);
 
   return (
     <section className="page map-page">
       <h1>Mapa</h1>
 
-      {rota && (
-  <div>
-    <p>Andar: {rota.andar.nome}</p>
-    <p>Origem: {rota.origem}</p>
-    <p>Destino: {rota.destino}</p>
-    <p>
-      Pontos da rota: {rota.caminho.length}
-    </p>
-  </div>
-)}
+      {/* INFORMAÇÕES TEMPORÁRIAS DA ROTA */}
+      {rota && trechoAtual && (
+        <div>
+          <p>
+            Andar: {trechoAtual.andar.nome}
+          </p>
 
+          <p>
+            Origem: {rota.origem}
+          </p>
 
+          <p>
+            Destino: {rota.destino}
+          </p>
+
+          <p>
+            Pontos deste trecho:{" "}
+            {trechoAtual.caminho.length}
+          </p>
+
+          <p>
+            Trechos da rota:{" "}
+            {rota.totalTrechos}
+          </p>
+        </div>
+      )}
 
       <div className="map-zoom-area">
         <TransformWrapper
@@ -93,20 +210,38 @@ function Map() {
             wrapperClass="map-transform-wrapper"
             contentClass="map-transform-content"
           >
-            {rota && (
+            {trechoAtual && (
               <svg
-                viewBox={`${rota.andar.viewBox.minX} ${rota.andar.viewBox.minY} ${rota.andar.viewBox.largura} ${rota.andar.viewBox.altura}`}
+                viewBox={`
+                  ${trechoAtual.andar.viewBox.minX}
+                  ${trechoAtual.andar.viewBox.minY}
+                  ${trechoAtual.andar.viewBox.largura}
+                  ${trechoAtual.andar.viewBox.altura}
+                `}
                 className="map-image"
                 xmlns="http://www.w3.org/2000/svg"
                 role="img"
-                aria-label={`Mapa do ${rota.andar.nome}`}
+                aria-label={`Mapa do ${trechoAtual.andar.nome}`}
               >
+                {/* PLANTA DO ANDAR */}
                 <image
-                  href={`/maps/${rota.andar.arquivoSvg}`}
-                  x={rota.andar.viewBox.minX}
-                  y={rota.andar.viewBox.minY}
-                  width={rota.andar.viewBox.largura}
-                  height={rota.andar.viewBox.altura}
+                  href={`/maps/${trechoAtual.andar.arquivoSvg}`}
+                  x={
+                    trechoAtual.andar.viewBox
+                      .minX
+                  }
+                  y={
+                    trechoAtual.andar.viewBox
+                      .minY
+                  }
+                  width={
+                    trechoAtual.andar.viewBox
+                      .largura
+                  }
+                  height={
+                    trechoAtual.andar.viewBox
+                      .altura
+                  }
                   preserveAspectRatio="xMidYMid meet"
                 />
 
@@ -143,11 +278,13 @@ function Map() {
                   />
                 </polyline>
 
-                                {/* VOCÊ ESTÁ AQUI */}
+                {/* VOCÊ ESTÁ AQUI */}
                 {pontoPartida && (
                   <g
                     transform={`translate(${pontoPartida.x}, ${pontoPartida.y})`}
-                    style={{ pointerEvents: "none" }}
+                    style={{
+                      pointerEvents: "none",
+                    }}
                   >
                     {/* Ponto de localização */}
                     <circle
@@ -203,7 +340,9 @@ function Map() {
                 {pontoDestino && (
                   <g
                     transform={`translate(${pontoDestino.x}, ${pontoDestino.y})`}
-                    style={{ pointerEvents: "none" }}
+                    style={{
+                      pointerEvents: "none",
+                    }}
                   >
                     {/* Anel pulsando */}
                     <circle
@@ -221,6 +360,7 @@ function Map() {
                         dur="1.8s"
                         repeatCount="indefinite"
                       />
+
                       <animate
                         attributeName="opacity"
                         values="0.7;0;0.7"
@@ -276,8 +416,6 @@ function Map() {
                     </text>
                   </g>
                 )}
-              
-                
               </svg>
             )}
           </TransformComponent>
@@ -285,30 +423,77 @@ function Map() {
       </div>
 
       <div className="map-options-card">
+        {/* ESCOLHA DA ROTA */}
         <div className="route-choice-buttons">
-          {["Rampa", "Elevador", "Escada"].map((tipo) => (
+          {[
+            "Rampa",
+            "Elevador",
+            "Escada",
+          ].map((tipo) => (
             <button
               key={tipo}
               type="button"
-              className={tipoRota === tipo ? "active" : ""}
-              onClick={() => setTipoRota(tipo as TipoRota)}
+              className={
+                tipoRota === tipo
+                  ? "active"
+                  : ""
+              }
+              onClick={() =>
+                setTipoRota(
+                  tipo as TipoRota
+                )
+              }
             >
               VIA {tipo.toUpperCase()}
             </button>
           ))}
         </div>
 
+        {/* ESCOLHA DO ANDAR */}
         <div className="floor-choice-buttons">
-          {["Térreo", "1º", "2º", "3º"].map((andar) => (
-            <button
-              key={andar}
-              type="button"
-              className={andarSelecionado === andar ? "active" : ""}
-              onClick={() => setAndarSelecionado(andar as Andar)}
-            >
-              {andar}
-            </button>
-          ))}
+          {(
+            [
+              "Térreo",
+              "1º",
+              "2º",
+              "3º",
+            ] as Andar[]
+          ).map((andar) => {
+            /*
+              Verifica se esse andar faz
+              parte da rota calculada.
+            */
+            const fazParteDaRota =
+              rota?.trechos.some(
+                (trecho) =>
+                  obterLabelAndar(
+                    trecho.andar.nome
+                  ) === andar
+              ) ?? false;
+
+            return (
+              <button
+                key={andar}
+                type="button"
+                disabled={
+                  !fazParteDaRota
+                }
+                className={
+                  andarSelecionado ===
+                  andar
+                    ? "active"
+                    : ""
+                }
+                onClick={() =>
+                  setAndarSelecionado(
+                    andar
+                  )
+                }
+              >
+                {andar}
+              </button>
+            );
+          })}
         </div>
       </div>
     </section>

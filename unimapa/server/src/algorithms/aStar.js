@@ -41,6 +41,19 @@ export function calcularAStar(
     throw new Error("Nó de destino não encontrado.");
   }
 
+  /*
+    Se origem e destino estiverem em andares diferentes,
+    não podemos comparar diretamente X e Y dos SVGs.
+
+    Nesse caso, usamos heurística 0.
+
+    A* com heurística 0 funciona como Dijkstra e continua
+    encontrando o menor caminho com base nas distâncias
+    cadastradas nas conexões.
+  */
+  const rotaEntreAndares =
+    origem.id_andar !== destino.id_andar;
+
   const vizinhos = new Map();
 
   for (const aresta of arestas) {
@@ -59,9 +72,12 @@ export function calcularAStar(
   custoDesdeOrigem.set(origemId, 0);
 
   const custoEstimado = new Map();
+
   custoEstimado.set(
     origemId,
-    calcularHeuristica(origem, destino)
+    rotaEntreAndares
+      ? 0
+      : calcularHeuristica(origem, destino)
   );
 
   while (abertos.size > 0) {
@@ -94,10 +110,12 @@ export function calcularAStar(
       const vizinhoId = aresta.no_destino;
 
       const custoAtual =
-        custoDesdeOrigem.get(atualId) ?? Infinity;
+        custoDesdeOrigem.get(atualId) ??
+        Infinity;
 
       const novoCusto =
-        custoAtual + Number(aresta.distancia);
+        custoAtual +
+        Number(aresta.distancia);
 
       const custoAnterior =
         custoDesdeOrigem.get(vizinhoId) ??
@@ -115,10 +133,12 @@ export function calcularAStar(
           nosPorId.get(vizinhoId);
 
         const heuristica =
-          calcularHeuristica(
-            vizinho,
-            destino
-          );
+          rotaEntreAndares
+            ? 0
+            : calcularHeuristica(
+                vizinho,
+                destino
+              );
 
         custoEstimado.set(
           vizinhoId,
