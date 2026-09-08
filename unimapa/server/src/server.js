@@ -224,11 +224,12 @@ app.get("/api/teste-rota", async (req, res) => {
       `
     );
 
-    const caminhoIds = calcularAStar(
+  const caminhoIds = calcularAStar(
   nos,
   arestas,
   origemId,
-  destinoId
+  destinoId,
+  tipoRota
 );
 
 /*
@@ -322,17 +323,98 @@ return res.json({
   }
 });
 
+function filtrarArestasPorTipoRota(
+  arestas,
+  tipoRota
+) {
+  const prefixos = {
+    Rampa: "N_RAMPA_",
+    Elevador: "N_ELEV_",
+    Escada: "N_ESC_",
+  };
+
+  const prefixoPermitido =
+    prefixos[tipoRota];
+
+  if (!prefixoPermitido) {
+    return arestas;
+  }
+
+  const prefixosVerticais = [
+    "N_RAMPA_",
+    "N_ELEV_",
+    "N_ESC_",
+  ];
+
+  return arestas.filter((aresta) => {
+    /*
+      Corredores, passarelas, QR e destinos
+      continuam funcionando normalmente.
+    */
+    if (
+      aresta.tipo_caminho !==
+      "ACESSO_VERTICAL"
+    ) {
+      return true;
+    }
+
+    const origem = String(
+      aresta.no_origem
+    ).toUpperCase();
+
+    const destino = String(
+      aresta.no_destino
+    ).toUpperCase();
+
+    const ids = [origem, destino];
+
+    for (const id of ids) {
+      const ehConectorVertical =
+        prefixosVerticais.some(
+          (prefixo) =>
+            id.startsWith(prefixo)
+        );
+
+      /*
+        Se for um conector vertical,
+        ele precisa ser do tipo escolhido.
+      */
+      if (
+        ehConectorVertical &&
+        !id.startsWith(
+          prefixoPermitido
+        )
+      ) {
+        return false;
+      }
+    }
+
+    return true;
+  });
+}
+
 app.post("/api/rotas/calcular", async (req, res) => {
   try {
-    const { codigoQr, idDestino } = req.body;
 
-    if (!codigoQr || !idDestino) {
-      return res.status(400).json({
-        status: "erro",
-        mensagem:
-          "codigoQr e idDestino são obrigatórios.",
-      });
-    }
+    const {
+  codigoQr,
+  idDestino,
+  tipoRota = "Rampa"
+} = req.body;
+
+console.log("DADOS RECEBIDOS:", {
+  codigoQr,
+  idDestino,
+  tipoRota
+});
+
+if (!codigoQr || !idDestino) {
+  return res.status(400).json({
+    status: "erro",
+    mensagem:
+      "codigoQr e idDestino são obrigatórios.",
+  });
+}
 
     // 1. Descobrir o nó correspondente ao QR Code
     const [resultadoQr] = await pool.execute(
@@ -405,10 +487,27 @@ app.post("/api/rotas/calcular", async (req, res) => {
       `
     );
 
-    // 5. Calcular o caminho usando A*
+    const arestasPermitidas =
+  filtrarArestasPorTipoRota(
+    arestas,
+    tipoRota
+  );
+
+console.log(
+  "TIPO DE ROTA:",
+  tipoRota
+);
+
+console.log(
+  "ARESTAS:",
+  arestas.length,
+  "→",
+  arestasPermitidas.length
+);
+
     const caminhoIds = calcularAStar(
       nos,
-      arestas,
+      arestasPermitidas,
       origemId,
       destinoId
     );

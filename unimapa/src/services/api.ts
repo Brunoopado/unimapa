@@ -39,20 +39,20 @@ export async function buscarRotaTeste(): Promise<RotaCalculada> {
 
 export async function calcularRota(
   codigoQr: string,
-  idDestino: string
+  idDestino: string,
+  tipoRota: "Rampa" | "Elevador" | "Escada"
 ): Promise<RotaCalculada> {
   const response = await fetch(
     `${API_URL}/rotas/calcular`,
     {
       method: "POST",
-
       headers: {
         "Content-Type": "application/json",
       },
-
       body: JSON.stringify({
         codigoQr,
         idDestino,
+        tipoRota,
       }),
     }
   );

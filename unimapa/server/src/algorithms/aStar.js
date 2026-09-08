@@ -18,11 +18,16 @@ function reconstruirCaminho(veioDe, destinoId) {
   return caminho;
 }
 
+
+
+
+
 export function calcularAStar(
   nos,
   arestas,
   origemId,
-  destinoId
+  destinoId,
+  tipoRota
 ) {
   const nosPorId = new Map();
 
@@ -34,42 +39,54 @@ export function calcularAStar(
   const destino = nosPorId.get(destinoId);
 
   if (!origem) {
-    throw new Error("Nó de origem não encontrado.");
+    throw new Error(
+      "Nó de origem não encontrado."
+    );
   }
 
   if (!destino) {
-    throw new Error("Nó de destino não encontrado.");
+    throw new Error(
+      "Nó de destino não encontrado."
+    );
   }
 
   /*
-    Se origem e destino estiverem em andares diferentes,
-    não podemos comparar diretamente X e Y dos SVGs.
-
-    Nesse caso, usamos heurística 0.
-
-    A* com heurística 0 funciona como Dijkstra e continua
-    encontrando o menor caminho com base nas distâncias
-    cadastradas nas conexões.
+    Se origem e destino estiverem em
+    andares diferentes, usamos heurística 0.
   */
   const rotaEntreAndares =
     origem.id_andar !== destino.id_andar;
 
+  /*
+    Monta lista de vizinhos.
+  */
   const vizinhos = new Map();
 
   for (const aresta of arestas) {
     if (!vizinhos.has(aresta.no_origem)) {
-      vizinhos.set(aresta.no_origem, []);
+      vizinhos.set(
+        aresta.no_origem,
+        []
+      );
     }
 
-    vizinhos.get(aresta.no_origem).push(aresta);
+    vizinhos
+      .get(aresta.no_origem)
+      .push(aresta);
   }
 
-  const abertos = new Set([origemId]);
+  const abertos = new Set([
+    origemId,
+  ]);
 
   const veioDe = new Map();
 
   const custoDesdeOrigem = new Map();
-  custoDesdeOrigem.set(origemId, 0);
+
+  custoDesdeOrigem.set(
+    origemId,
+    0
+  );
 
   const custoEstimado = new Map();
 
@@ -77,7 +94,10 @@ export function calcularAStar(
     origemId,
     rotaEntreAndares
       ? 0
-      : calcularHeuristica(origem, destino)
+      : calcularHeuristica(
+          origem,
+          destino
+        )
   );
 
   while (abertos.size > 0) {
@@ -86,7 +106,8 @@ export function calcularAStar(
 
     for (const idNo of abertos) {
       const custo =
-        custoEstimado.get(idNo) ?? Infinity;
+        custoEstimado.get(idNo) ??
+        Infinity;
 
       if (custo < menorCusto) {
         menorCusto = custo;
@@ -94,6 +115,9 @@ export function calcularAStar(
       }
     }
 
+    /*
+      Chegou ao destino.
+    */
     if (atualId === destinoId) {
       return reconstruirCaminho(
         veioDe,
@@ -106,6 +130,9 @@ export function calcularAStar(
     const conexoesDoNo =
       vizinhos.get(atualId) ?? [];
 
+    /*
+      Analisa cada conexão do nó atual.
+    */
     for (const aresta of conexoesDoNo) {
       const vizinhoId = aresta.no_destino;
 

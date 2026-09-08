@@ -126,7 +126,8 @@ function Map() {
 
         const resultado = await calcularRota(
           codigoQr,
-          idDestino
+          idDestino,
+          tipoRota
         );
 
         console.log(
@@ -162,8 +163,8 @@ function Map() {
     }
 
     carregarRota();
-  }, [codigoQr, idDestino]);
-
+  }, [codigoQr, idDestino, tipoRota]);
+  
   return (
     <section className="page map-page">
       <h1>Mapa</h1>
