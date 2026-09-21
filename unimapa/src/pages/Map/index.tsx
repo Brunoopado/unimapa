@@ -5,11 +5,25 @@ import {
 } from "react-zoom-pan-pinch";
 import { useSearchParams } from "react-router-dom";
 import { calcularRota } from "../../services/api";
+import { getRoutePreference } from "../../services/cookieService";
 import type { RotaCalculada } from "../../types/rota";
 
 type Andar = "Térreo" | "1º" | "2º" | "3º";
 type TipoRota = "Rampa" | "Elevador" | "Escada";
 
+function obterTipoRotaPreferido(): TipoRota {
+  const preferencia = getRoutePreference();
+
+  if (preferencia === "ramps") {
+    return "Rampa";
+  }
+
+  if (preferencia === "elevators") {
+    return "Elevador";
+  }
+
+  return "Escada";
+}
 /*
   O backend retorna nomes como:
   "2º Andar"
@@ -55,7 +69,9 @@ function Map() {
     useState<Andar>("3º");
 
   const [tipoRota, setTipoRota] =
-    useState<TipoRota>("Rampa");
+  useState<TipoRota>(() =>
+    obterTipoRotaPreferido()
+  );
 
   const [rotacaoMapa, setRotacaoMapa] =
   useState(0);

@@ -8,12 +8,12 @@ function BottomNav() {
         <Home size={28} />
       </NavLink>
 
-      <NavLink to="/map" className="bottom-nav-item">
-        <MapPin size={28} />
-      </NavLink>
-
       <NavLink to="/search" className="bottom-nav-item">
         <Search size={28} />
+      </NavLink>
+
+      <NavLink to="/map" className="bottom-nav-item">
+        <MapPin size={28} />
       </NavLink>
 
       <NavLink to="/how-to-use" className="bottom-nav-item">
