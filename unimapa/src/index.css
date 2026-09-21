@@ -658,3 +658,32 @@ body {
   font-size: 0.95rem;
   line-height: 1.45;
 }
+
+.scan-location-button {
+  width: 100%;
+  min-height: 58px;
+
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+
+  border: none;
+  border-radius: 10px;
+
+  background: transparent;
+  color: #0033b3;
+
+  font-size: 1rem;
+  font-weight: 700;
+
+  cursor: pointer;
+
+  transition:
+    background-color 0.2s ease,
+    color 0.2s ease;
+}
+
+.scan-location-button:hover {
+  background: #e8edfa;
+}
