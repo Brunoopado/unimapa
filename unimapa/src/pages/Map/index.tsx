@@ -57,6 +57,9 @@ function Map() {
   const [tipoRota, setTipoRota] =
     useState<TipoRota>("Rampa");
 
+  const [rotacaoMapa, setRotacaoMapa] =
+  useState(0);
+
   /*
     Descobre qual trecho da rota corresponde
     ao andar selecionado pelo usuário.
@@ -164,7 +167,7 @@ function Map() {
 
     carregarRota();
   }, [codigoQr, idDestino, tipoRota]);
-  
+
   return (
     <section className="page map-page">
       <h1>Mapa</h1>
@@ -196,7 +199,32 @@ function Map() {
         </div>
       )}
 
+
+
       <div className="map-zoom-area">
+
+        <div className="map-rotation-buttons">
+          <button
+            type="button"
+            onClick={() =>
+              setRotacaoMapa((rotacao) => rotacao - 90)
+            }
+            title="Girar para esquerda"
+          >
+            ↺
+          </button>
+
+          <button
+            type="button"
+            onClick={() =>
+              setRotacaoMapa((rotacao) => rotacao + 90)
+            }
+            title="Girar para direita"
+          >
+            ↻
+          </button>
+        </div>
+
         <TransformWrapper
           initialScale={1}
           minScale={1}
@@ -220,6 +248,11 @@ function Map() {
                   ${trechoAtual.andar.viewBox.altura}
                 `}
                 className="map-image"
+                style={{
+                  transform: `rotate(${rotacaoMapa}deg)`,
+                  transformOrigin: "center center",
+                  transition: "transform 0.3s ease",
+                }}
                 xmlns="http://www.w3.org/2000/svg"
                 role="img"
                 aria-label={`Mapa do ${trechoAtual.andar.nome}`}
@@ -287,53 +320,53 @@ function Map() {
                       pointerEvents: "none",
                     }}
                   >
-                    {/* Ponto de localização */}
-                    <circle
-                      cx="0"
-                      cy="0"
-                      r="22"
-                      fill="#ffffff"
-                      stroke="#F97316"
-                      strokeWidth="7"
-                    />
+                    <g transform={`rotate(${-rotacaoMapa})`}>
 
-                    <circle
-                      cx="0"
-                      cy="0"
-                      r="10"
-                      fill="#F97316"
-                    />
+                      <circle
+                        cx="0"
+                        cy="0"
+                        r="22"
+                        fill="#ffffff"
+                        stroke="#F97316"
+                        strokeWidth="7"
+                      />
 
-                    {/* Balão */}
-                    <rect
-                      x="-135"
-                      y="-110"
-                      width="270"
-                      height="62"
-                      rx="22"
-                      fill="#F97316"
-                      stroke="#ffffff"
-                      strokeWidth="5"
-                    />
+                      <circle
+                        cx="0"
+                        cy="0"
+                        r="10"
+                        fill="#F97316"
+                      />
 
-                    {/* Ponta do balão */}
-                    <polygon
-                      points="-20,-51 20,-51 0,-24"
-                      fill="#F97316"
-                    />
+                      <rect
+                        x="-135"
+                        y="-110"
+                        width="270"
+                        height="62"
+                        rx="22"
+                        fill="#F97316"
+                        stroke="#ffffff"
+                        strokeWidth="5"
+                      />
 
-                    {/* Texto */}
-                    <text
-                      x="0"
-                      y="-78"
-                      textAnchor="middle"
-                      dominantBaseline="middle"
-                      fontSize="27"
-                      fontWeight="700"
-                      fill="#ffffff"
-                    >
-                      Você está aqui
-                    </text>
+                      <polygon
+                        points="-20,-51 20,-51 0,-24"
+                        fill="#F97316"
+                      />
+
+                      <text
+                        x="0"
+                        y="-78"
+                        textAnchor="middle"
+                        dominantBaseline="middle"
+                        fontSize="27"
+                        fontWeight="700"
+                        fill="#ffffff"
+                      >
+                        Você está aqui
+                      </text>
+
+                    </g>
                   </g>
                 )}
 
@@ -345,78 +378,81 @@ function Map() {
                       pointerEvents: "none",
                     }}
                   >
-                    {/* Anel pulsando */}
-                    <circle
-                      cx="0"
-                      cy="0"
-                      r="12"
-                      fill="none"
-                      stroke="#F97316"
-                      strokeWidth="6"
-                      opacity="0.7"
-                    >
-                      <animate
-                        attributeName="r"
-                        values="12;40;12"
-                        dur="1.8s"
-                        repeatCount="indefinite"
-                      />
-
-                      <animate
-                        attributeName="opacity"
-                        values="0.7;0;0.7"
-                        dur="1.8s"
-                        repeatCount="indefinite"
-                      />
-                    </circle>
-
-                    {/* Pin animado */}
-                    <g>
-                      <animateTransform
-                        attributeName="transform"
-                        type="translate"
-                        values="0 0; 0 -10; 0 0"
-                        dur="1.5s"
-                        repeatCount="indefinite"
-                      />
-
-                      <path
-                        d="
-                          M 0 0
-                          C -18 -24, -30 -40, -30 -60
-                          C -30 -83, -17 -98, 0 -98
-                          C 17 -98, 30 -83, 30 -60
-                          C 30 -40, 18 -24, 0 0
-                          Z
-                        "
-                        fill="#F97316"
-                        stroke="#ffffff"
-                        strokeWidth="6"
-                      />
-
+                    <g transform={`rotate(${-rotacaoMapa})`}>
+                      {/* Anel pulsando */}
                       <circle
                         cx="0"
-                        cy="-62"
-                        r="11"
-                        fill="#ffffff"
-                      />
-                    </g>
+                        cy="0"
+                        r="12"
+                        fill="none"
+                        stroke="#F97316"
+                        strokeWidth="6"
+                        opacity="0.7"
+                      >
+                        <animate
+                          attributeName="r"
+                          values="12;40;12"
+                          dur="1.8s"
+                          repeatCount="indefinite"
+                        />
 
-                    <text
-                      x="0"
-                      y="-120"
-                      textAnchor="middle"
-                      fontSize="38"
-                      fontWeight="700"
-                      fill="#F97316"
-                      stroke="#ffffff"
-                      strokeWidth="4"
-                      paintOrder="stroke"
-                    >
-                      Chegada
-                    </text>
+                        <animate
+                          attributeName="opacity"
+                          values="0.7;0;0.7"
+                          dur="1.8s"
+                          repeatCount="indefinite"
+                        />
+                      </circle>
+
+                      {/* Pin animado */}
+                      <g>
+                        <animateTransform
+                          attributeName="transform"
+                          type="translate"
+                          values="0 0; 0 -10; 0 0"
+                          dur="1.5s"
+                          repeatCount="indefinite"
+                        />
+
+                        <path
+                          d="
+                            M 0 0
+                            C -18 -24, -30 -40, -30 -60
+                            C -30 -83, -17 -98, 0 -98
+                            C 17 -98, 30 -83, 30 -60
+                            C 30 -40, 18 -24, 0 0
+                            Z
+                          "
+                          fill="#F97316"
+                          stroke="#ffffff"
+                          strokeWidth="6"
+                        />
+
+                        <circle
+                          cx="0"
+                          cy="-62"
+                          r="11"
+                          fill="#ffffff"
+                        />
+                      </g>
+
+                      <text
+                        x="0"
+                        y="-120"
+                        textAnchor="middle"
+                        fontSize="38"
+                        fontWeight="700"
+                        fill="#F97316"
+                        stroke="#ffffff"
+                        strokeWidth="4"
+                        paintOrder="stroke"
+                      >
+                        Chegada
+                      </text>
+                    </g>
                   </g>
                 )}
+
               </svg>
             )}
           </TransformComponent>
