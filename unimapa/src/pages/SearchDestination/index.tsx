@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { Search } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { getCurrentLocation } from "../../services/cookieService";
@@ -13,6 +13,32 @@ function SearchDestination() {
   const [erro, setErro] = useState<string | null>(null);
   const [pesquisou, setPesquisou] = useState(false);
   const navigate = useNavigate();
+
+  useEffect(() => {
+    async function carregarDestinos() {
+      try {
+        setCarregando(true);
+        setErro(null);
+
+        const resposta = await pesquisarDestinos("");
+
+        setResultados(resposta.destinos);
+      } catch (error) {
+        console.error(
+          "Erro ao carregar destinos:",
+          error
+        );
+
+        setErro(
+          "Não foi possível carregar os destinos."
+        );
+      } finally {
+        setCarregando(false);
+      }
+    }
+
+    carregarDestinos();
+  }, []);
 
   function abrirDestino(destino: Destino) {
   const currentLocation = getCurrentLocation();
@@ -105,11 +131,29 @@ function SearchDestination() {
         <div className="placeholder-card">
           <h2>Prédio Principal</h2>
 
-          <p>Térreo</p>
-          <p>Biblioteca</p>
-          <p>Cantina</p>
-          <p>Elevador</p>
-          <p>Escada</p>
+          {resultados.length === 0 && !carregando ? (
+            <p>Nenhum destino encontrado.</p>
+          ) : (
+            resultados.map((destino) => (
+              <button
+                key={destino.id_destino}
+                type="button"
+                className="destination-result"
+                onClick={() => abrirDestino(destino)}
+              >
+                <p>
+                  <strong>{destino.nome}</strong>
+                </p>
+
+                <p>
+                  {destino.andar}
+                  {destino.bloco
+                    ? ` - Bloco ${destino.bloco}`
+                    : ""}
+                </p>
+              </button>
+            ))
+          )}
         </div>
       )}
 
