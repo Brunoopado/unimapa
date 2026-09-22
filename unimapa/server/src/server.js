@@ -393,6 +393,51 @@ function filtrarArestasPorTipoRota(
   });
 }
 
+app.get("/api/andares", async (req, res) => {
+  try {
+    const [andares] = await pool.query(
+      `
+        SELECT
+          id_andar,
+          nome,
+          arquivo_svg,
+          viewbox_largura,
+          viewbox_altura
+        FROM andar
+        WHERE ativo = TRUE
+      `
+    );
+
+    return res.json({
+      status: "ok",
+
+      andares: andares.map((andar) => ({
+        id: andar.id_andar,
+        nome: andar.nome,
+        arquivoSvg: andar.arquivo_svg,
+
+        viewBox: {
+          minX: 0,
+          minY: 0,
+          largura: Number(
+            andar.viewbox_largura
+          ),
+          altura: Number(
+            andar.viewbox_altura
+          ),
+        },
+      })),
+    });
+  } catch (error) {
+    console.error(error);
+
+    return res.status(500).json({
+      status: "erro",
+      mensagem: error.message,
+    });
+  }
+});
+
 app.post("/api/rotas/calcular", async (req, res) => {
   try {
 

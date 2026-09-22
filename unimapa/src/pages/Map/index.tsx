@@ -5,20 +5,41 @@ import {
 } from "react-zoom-pan-pinch";
 import { useSearchParams } from "react-router-dom";
 
-import { calcularRota } from "../../services/api";
-import { getRoutePreference } from "../../services/cookieService";
+import {
+  buscarAndares,
+  calcularRota,
+} from "../../services/api";
 
-import type { RotaCalculada } from "../../types/rota";
+import type {
+  AndarMapa,
+} from "../../services/api";
 
-type Andar = "Térreo" | "1º" | "2º" | "3º";
-type TipoRota = "Rampa" | "Elevador" | "Escada";
+import {
+  getRoutePreference,
+} from "../../services/cookieService";
+
+import type {
+  RotaCalculada,
+} from "../../types/rota";
+
+type Andar =
+  | "Térreo"
+  | "1º"
+  | "2º"
+  | "3º";
+
+type TipoRota =
+  | "Rampa"
+  | "Elevador"
+  | "Escada";
 
 /*
   Converte a preferência salva no cookie
   para o tipo utilizado pelo mapa.
 */
 function obterTipoRotaPreferido(): TipoRota {
-  const preferencia = getRoutePreference();
+  const preferencia =
+    getRoutePreference();
 
   if (preferencia === "ramps") {
     return "Rampa";
@@ -32,16 +53,8 @@ function obterTipoRotaPreferido(): TipoRota {
 }
 
 /*
-  O backend retorna nomes como:
-  "2º Andar"
-  "3º Andar"
-
-  Mas os botões mostram:
-  "2º"
-  "3º"
-
-  Esta função converte o nome vindo do backend
-  para o formato utilizado pela interface.
+  Converte o nome do andar vindo
+  do backend para o formato dos botões.
 */
 function obterLabelAndar(
   nomeAndar: string
@@ -66,13 +79,15 @@ function obterLabelAndar(
 }
 
 /*
-  Define uma ordem numérica para os andares.
-
-  Isso permite descobrir se o usuário
-  está subindo ou descendo.
+  Ordem numérica dos andares para
+  descobrir se o usuário está
+  subindo ou descendo.
 */
-function obterOrdemAndar(nomeAndar: string) {
-  const andar = obterLabelAndar(nomeAndar);
+function obterOrdemAndar(
+  nomeAndar: string
+) {
+  const andar =
+    obterLabelAndar(nomeAndar);
 
   if (!andar) {
     return null;
@@ -89,8 +104,8 @@ function obterOrdemAndar(nomeAndar: string) {
 }
 
 /*
-  Retorna o texto correspondente ao
-  tipo de rota selecionado.
+  Texto mostrado na continuação
+  entre andares.
 */
 function obterTextoTipoRota(
   tipoRota: TipoRota
@@ -107,7 +122,8 @@ function obterTextoTipoRota(
 }
 
 function Map() {
-  const [searchParams] = useSearchParams();
+  const [searchParams] =
+    useSearchParams();
 
   const codigoQr =
     searchParams.get("codigoQr");
@@ -119,61 +135,104 @@ function Map() {
     ESTADOS
   */
   const [rota, setRota] =
-    useState<RotaCalculada | null>(null);
+    useState<RotaCalculada | null>(
+      null
+    );
+
+  const [
+    andaresDisponiveis,
+    setAndaresDisponiveis,
+  ] = useState<AndarMapa[]>([]);
 
   const [
     andarSelecionado,
     setAndarSelecionado,
   ] = useState<Andar>("3º");
 
-  const [tipoRota, setTipoRota] =
-    useState<TipoRota>(() =>
-      obterTipoRotaPreferido()
-    );
+  const [
+    tipoRota,
+    setTipoRota,
+  ] = useState<TipoRota>(() =>
+    obterTipoRotaPreferido()
+  );
 
-  const [rotacaoMapa, setRotacaoMapa] =
-    useState(0);
+  const [
+    rotacaoMapa,
+    setRotacaoMapa,
+  ] = useState(0);
 
   /*
-    Descobre qual trecho da rota corresponde
-    ao andar selecionado pelo usuário.
+    Descobre qual trecho da rota
+    corresponde ao andar selecionado.
   */
   const indiceTrechoAtual =
-    rota?.trechos.findIndex((trecho) => {
-      const labelAndar = obterLabelAndar(
-        trecho.andar.nome
-      );
+    rota?.trechos.findIndex(
+      (trecho) => {
+        const labelAndar =
+          obterLabelAndar(
+            trecho.andar.nome
+          );
 
-      return (
-        labelAndar === andarSelecionado
-      );
-    }) ?? -1;
+        return (
+          labelAndar ===
+          andarSelecionado
+        );
+      }
+    ) ?? -1;
 
   /*
-    Trecho que será exibido atualmente
-    no mapa.
+    Trecho atual da rota.
+    Só existe quando há uma rota.
   */
   const trechoAtual =
-    rota && indiceTrechoAtual >= 0
-      ? rota.trechos[indiceTrechoAtual]
+    rota &&
+    indiceTrechoAtual >= 0
+      ? rota.trechos[
+          indiceTrechoAtual
+        ]
       : null;
 
   /*
-    Converte os pontos do trecho atual
-    para o formato utilizado pela polyline SVG.
+    Quando NÃO existe rota,
+    busca o mapa normal do andar
+    selecionado pelo usuário.
   */
-  const pontosPolyline = trechoAtual
-    ? trechoAtual.caminho
-        .map(
-          (ponto) =>
-            `${ponto.x},${ponto.y}`
-        )
-        .join(" ")
-    : "";
+  const andarPadraoAtual =
+    andaresDisponiveis.find(
+      (andar) =>
+        obterLabelAndar(
+          andar.nome
+        ) === andarSelecionado
+    ) ?? null;
 
   /*
-    "Você está aqui" aparece somente
-    no primeiro trecho da rota.
+    Se existe rota:
+    mostra o mapa daquele trecho.
+
+    Se não existe rota:
+    mostra o andar selecionado
+    no modo de exploração.
+  */
+  const mapaExibido =
+    trechoAtual?.andar ??
+    andarPadraoAtual;
+
+  /*
+    Pontos utilizados pela linha
+    verde da rota.
+  */
+  const pontosPolyline =
+    trechoAtual
+      ? trechoAtual.caminho
+          .map(
+            (ponto) =>
+              `${ponto.x},${ponto.y}`
+          )
+          .join(" ")
+      : "";
+
+  /*
+    "Você está aqui"
   */
   const pontoPartida =
     trechoAtual &&
@@ -183,8 +242,7 @@ function Map() {
       : null;
 
   /*
-    O pin "Chegada" aparece somente
-    no último trecho da rota.
+    "Chegada"
   */
   const pontoDestino =
     trechoAtual &&
@@ -193,18 +251,14 @@ function Map() {
       rota.trechos.length - 1 &&
     trechoAtual.caminho.length > 0
       ? trechoAtual.caminho[
-          trechoAtual.caminho.length - 1
+          trechoAtual.caminho
+            .length - 1
         ]
       : null;
 
   /*
-    Identificação para andares intermediários.
-
-    Exemplo:
-    rota do 1º para o 3º andar.
-
-    No 2º andar mostramos:
-    "Continue subindo pela rampa"
+    Verifica se o usuário está
+    visualizando um andar intermediário.
   */
   const ehAndarIntermediario =
     rota &&
@@ -217,12 +271,14 @@ function Map() {
     ehAndarIntermediario &&
     trechoAtual.caminho.length > 0
       ? trechoAtual.caminho[
-          trechoAtual.caminho.length - 1
+          trechoAtual.caminho
+            .length - 1
         ]
       : null;
 
   const proximoTrecho =
-    rota && ehAndarIntermediario
+    rota &&
+    ehAndarIntermediario
       ? rota.trechos[
           indiceTrechoAtual + 1
         ]
@@ -259,12 +315,50 @@ function Map() {
   }
 
   /*
-    CARREGAMENTO DA ROTA
+    CARREGA OS MAPAS DOS ANDARES
+
+    Esse carregamento permite usar
+    /map mesmo sem existir uma rota.
+  */
+  useEffect(() => {
+    async function carregarAndares() {
+      try {
+        const resultado =
+          await buscarAndares();
+
+        setAndaresDisponiveis(
+          resultado
+        );
+      } catch (error) {
+        console.error(
+          "Erro ao carregar andares:",
+          error
+        );
+      }
+    }
+
+    carregarAndares();
+  }, []);
+
+  /*
+    CARREGA A ROTA
+
+    Só calcula quando codigoQr e
+    idDestino existem na URL.
   */
   useEffect(() => {
     async function carregarRota() {
       try {
-        if (!codigoQr || !idDestino) {
+        /*
+          Sem origem/destino:
+          estamos apenas explorando
+          os mapas.
+        */
+        if (
+          !codigoQr ||
+          !idDestino
+        ) {
+          setRota(null);
           return;
         }
 
@@ -284,12 +378,13 @@ function Map() {
         setRota(resultado);
 
         /*
-          Quando a rota carregar, o mapa
-          começa automaticamente no andar
-          onde o usuário está.
+          Ao carregar uma rota,
+          começa automaticamente
+          no andar da origem.
         */
         if (
-          resultado.trechos.length > 0
+          resultado.trechos.length >
+          0
         ) {
           const primeiroAndar =
             obterLabelAndar(
@@ -320,7 +415,6 @@ function Map() {
 
   return (
     <section className="page map-page">
-
       {/* ÁREA DO MAPA */}
       <div className="map-zoom-area">
         {/* BOTÕES DE ROTAÇÃO */}
@@ -374,13 +468,13 @@ function Map() {
             wrapperClass="map-transform-wrapper"
             contentClass="map-transform-content"
           >
-            {trechoAtual && (
+            {mapaExibido && (
               <svg
                 viewBox={`
-                  ${trechoAtual.andar.viewBox.minX}
-                  ${trechoAtual.andar.viewBox.minY}
-                  ${trechoAtual.andar.viewBox.largura}
-                  ${trechoAtual.andar.viewBox.altura}
+                  ${mapaExibido.viewBox.minX}
+                  ${mapaExibido.viewBox.minY}
+                  ${mapaExibido.viewBox.largura}
+                  ${mapaExibido.viewBox.altura}
                 `}
                 className="map-image"
                 style={{
@@ -392,62 +486,73 @@ function Map() {
                 }}
                 xmlns="http://www.w3.org/2000/svg"
                 role="img"
-                aria-label={`Mapa do ${trechoAtual.andar.nome}`}
+                aria-label={`Mapa do ${mapaExibido.nome}`}
               >
                 {/* PLANTA DO ANDAR */}
                 <image
-                  href={`/maps/${trechoAtual.andar.arquivoSvg}`}
+                  href={`/maps/${mapaExibido.arquivoSvg}`}
                   x={
-                    trechoAtual.andar
-                      .viewBox.minX
+                    mapaExibido.viewBox
+                      .minX
                   }
                   y={
-                    trechoAtual.andar
-                      .viewBox.minY
+                    mapaExibido.viewBox
+                      .minY
                   }
                   width={
-                    trechoAtual.andar
-                      .viewBox.largura
+                    mapaExibido.viewBox
+                      .largura
                   }
                   height={
-                    trechoAtual.andar
-                      .viewBox.altura
+                    mapaExibido.viewBox
+                      .altura
                   }
                   preserveAspectRatio="xMidYMid meet"
                 />
 
-                {/* ROTA FIXA */}
-                <polyline
-                  points={pontosPolyline}
-                  fill="none"
-                  stroke="#00a63d"
-                  strokeWidth="25"
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                />
+                {/* ROTA */}
+                {trechoAtual && (
+                  <>
+                    {/* ROTA FIXA */}
+                    <polyline
+                      points={
+                        pontosPolyline
+                      }
+                      fill="none"
+                      stroke="#00a63d"
+                      strokeWidth="25"
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                    />
 
-                {/* BRILHO ANIMADO SOBRE A ROTA */}
-                <polyline
-                  key={pontosPolyline}
-                  points={pontosPolyline}
-                  fill="none"
-                  stroke="#9cffb7"
-                  strokeWidth="25"
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  pathLength={100}
-                  strokeDasharray="18 82"
-                  strokeDashoffset="100"
-                  opacity="0.95"
-                >
-                  <animate
-                    attributeName="stroke-dashoffset"
-                    from="100"
-                    to="0"
-                    dur="2.2s"
-                    repeatCount="indefinite"
-                  />
-                </polyline>
+                    {/* BRILHO ANIMADO */}
+                    <polyline
+                      key={
+                        pontosPolyline
+                      }
+                      points={
+                        pontosPolyline
+                      }
+                      fill="none"
+                      stroke="#9cffb7"
+                      strokeWidth="25"
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      pathLength={100}
+                      strokeDasharray="18 82"
+                      strokeDashoffset="100"
+                      opacity="0.95"
+                    >
+                      <animate
+                        attributeName="stroke-dashoffset"
+                        from="100"
+                        to="0"
+                        dur="2.2s"
+                        repeatCount="indefinite"
+                      />
+                    </polyline>
+                  </>
+                )}
 
                 {/* CONTINUAÇÃO ENTRE ANDARES */}
                 {pontoContinuidade &&
@@ -459,11 +564,10 @@ function Map() {
                           "none",
                       }}
                     >
-                      {/* Mantém o aviso reto quando o mapa gira */}
                       <g
                         transform={`rotate(${-rotacaoMapa})`}
                       >
-                        {/* Marcador */}
+                        {/* MARCADOR */}
                         <circle
                           cx="0"
                           cy="0"
@@ -473,7 +577,7 @@ function Map() {
                           strokeWidth="6"
                         />
 
-                        {/* Seta */}
+                        {/* SETA */}
                         <text
                           x="0"
                           y="2"
@@ -489,7 +593,7 @@ function Map() {
                             : "↓"}
                         </text>
 
-                        {/* Balão */}
+                        {/* BALÃO */}
                         <rect
                           x="-165"
                           y="-115"
@@ -501,13 +605,11 @@ function Map() {
                           strokeWidth="5"
                         />
 
-                        {/* Ponta do balão */}
                         <polygon
                           points="-20,-50 20,-50 0,-24"
                           fill="#F97316"
                         />
 
-                        {/* Texto */}
                         <text
                           x="0"
                           y="-88"
@@ -611,7 +713,7 @@ function Map() {
                     <g
                       transform={`rotate(${-rotacaoMapa})`}
                     >
-                      {/* Anel pulsando */}
+                      {/* ANEL PULSANDO */}
                       <circle
                         cx="0"
                         cy="0"
@@ -636,7 +738,7 @@ function Map() {
                         />
                       </circle>
 
-                      {/* Pin animado */}
+                      {/* PIN ANIMADO */}
                       <g>
                         <animateTransform
                           attributeName="transform"
@@ -692,32 +794,36 @@ function Map() {
 
       {/* OPÇÕES DO MAPA */}
       <div className="map-options-card">
-        {/* ESCOLHA DA ROTA */}
-        <div className="route-choice-buttons">
-          {[
-            "Rampa",
-            "Elevador",
-            "Escada",
-          ].map((tipo) => (
-            <button
-              key={tipo}
-              type="button"
-              className={
-                tipoRota === tipo
-                  ? "active"
-                  : ""
-              }
-              onClick={() =>
-                setTipoRota(
-                  tipo as TipoRota
-                )
-              }
-            >
-              VIA{" "}
-              {tipo.toUpperCase()}
-            </button>
-          ))}
-        </div>
+        {/* PREFERÊNCIA DE ROTA
+            Só aparece quando existe rota calculada.
+        */}
+        {rota && (
+          <div className="route-choice-buttons">
+            {[
+              "Rampa",
+              "Elevador",
+              "Escada",
+            ].map((tipo) => (
+              <button
+                key={tipo}
+                type="button"
+                className={
+                  tipoRota === tipo
+                    ? "active"
+                    : ""
+                }
+                onClick={() =>
+                  setTipoRota(
+                    tipo as TipoRota
+                  )
+                }
+              >
+                VIA{" "}
+                {tipo.toUpperCase()}
+              </button>
+            ))}
+          </div>
+        )}
 
         {/* ESCOLHA DO ANDAR */}
         <div className="floor-choice-buttons">
@@ -730,23 +836,40 @@ function Map() {
             ] as Andar[]
           ).map((andar) => {
             /*
-              Verifica se esse andar faz
-              parte da rota calculada.
+              Verifica se realmente existe
+              um SVG para esse andar.
             */
-            const fazParteDaRota =
-              rota?.trechos.some(
-                (trecho) =>
+            const existeMapa =
+              andaresDisponiveis.some(
+                (mapa) =>
                   obterLabelAndar(
-                    trecho.andar.nome
+                    mapa.nome
                   ) === andar
-              ) ?? false;
+              );
+
+            /*
+              COM ROTA:
+              permite somente andares da rota.
+
+              SEM ROTA:
+              permite todos os mapas existentes.
+            */
+            const podeSelecionar =
+              rota
+                ? rota.trechos.some(
+                    (trecho) =>
+                      obterLabelAndar(
+                        trecho.andar.nome
+                      ) === andar
+                  )
+                : existeMapa;
 
             return (
               <button
                 key={andar}
                 type="button"
                 disabled={
-                  !fazParteDaRota
+                  !podeSelecionar
                 }
                 className={
                   andarSelecionado ===

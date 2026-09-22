@@ -108,3 +108,34 @@ export async function buscarQrPorCodigo(
 
   return dados;
 }
+
+export type AndarMapa = {
+  id: number;
+  nome: string;
+  arquivoSvg: string;
+
+  viewBox: {
+    minX: number;
+    minY: number;
+    largura: number;
+    altura: number;
+  };
+};
+
+export async function buscarAndares(): Promise<
+  AndarMapa[]
+> {
+  const response = await fetch(
+    `${API_URL}/andares`
+  );
+
+  if (!response.ok) {
+    throw new Error(
+      `Erro ao buscar andares: ${response.status}`
+    );
+  }
+
+  const dados = await response.json();
+
+  return dados.andares;
+}
