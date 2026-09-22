@@ -153,12 +153,6 @@ function Home() {
             {message}
           </p>
         )}
-
-        <p className="demo-codes">
-          Códigos disponíveis para teste:
-          QR_3_01, QR_3_02, QR_3_03,
-          QR_3_04, QR_3_05
-        </p>
       </div>
 
       {/* AÇÕES */}
