@@ -4,13 +4,19 @@ import {
   TransformComponent,
 } from "react-zoom-pan-pinch";
 import { useSearchParams } from "react-router-dom";
+
 import { calcularRota } from "../../services/api";
 import { getRoutePreference } from "../../services/cookieService";
+
 import type { RotaCalculada } from "../../types/rota";
 
 type Andar = "Térreo" | "1º" | "2º" | "3º";
 type TipoRota = "Rampa" | "Elevador" | "Escada";
 
+/*
+  Converte a preferência salva no cookie
+  para o tipo utilizado pelo mapa.
+*/
 function obterTipoRotaPreferido(): TipoRota {
   const preferencia = getRoutePreference();
 
@@ -24,6 +30,7 @@ function obterTipoRotaPreferido(): TipoRota {
 
   return "Escada";
 }
+
 /*
   O backend retorna nomes como:
   "2º Andar"
@@ -36,7 +43,9 @@ function obterTipoRotaPreferido(): TipoRota {
   Esta função converte o nome vindo do backend
   para o formato utilizado pela interface.
 */
-function obterLabelAndar(nomeAndar: string): Andar | null {
+function obterLabelAndar(
+  nomeAndar: string
+): Andar | null {
   if (nomeAndar.startsWith("Térreo")) {
     return "Térreo";
   }
@@ -56,25 +65,74 @@ function obterLabelAndar(nomeAndar: string): Andar | null {
   return null;
 }
 
+/*
+  Define uma ordem numérica para os andares.
+
+  Isso permite descobrir se o usuário
+  está subindo ou descendo.
+*/
+function obterOrdemAndar(nomeAndar: string) {
+  const andar = obterLabelAndar(nomeAndar);
+
+  if (!andar) {
+    return null;
+  }
+
+  const ordem: Record<Andar, number> = {
+    "Térreo": 0,
+    "1º": 1,
+    "2º": 2,
+    "3º": 3,
+  };
+
+  return ordem[andar];
+}
+
+/*
+  Retorna o texto correspondente ao
+  tipo de rota selecionado.
+*/
+function obterTextoTipoRota(
+  tipoRota: TipoRota
+) {
+  if (tipoRota === "Elevador") {
+    return "pelo elevador";
+  }
+
+  if (tipoRota === "Escada") {
+    return "pela escada";
+  }
+
+  return "pela rampa";
+}
+
 function Map() {
   const [searchParams] = useSearchParams();
 
-  const codigoQr = searchParams.get("codigoQr");
-  const idDestino = searchParams.get("idDestino");
+  const codigoQr =
+    searchParams.get("codigoQr");
 
+  const idDestino =
+    searchParams.get("idDestino");
+
+  /*
+    ESTADOS
+  */
   const [rota, setRota] =
     useState<RotaCalculada | null>(null);
 
-  const [andarSelecionado, setAndarSelecionado] =
-    useState<Andar>("3º");
+  const [
+    andarSelecionado,
+    setAndarSelecionado,
+  ] = useState<Andar>("3º");
 
   const [tipoRota, setTipoRota] =
-  useState<TipoRota>(() =>
-    obterTipoRotaPreferido()
-  );
+    useState<TipoRota>(() =>
+      obterTipoRotaPreferido()
+    );
 
   const [rotacaoMapa, setRotacaoMapa] =
-  useState(0);
+    useState(0);
 
   /*
     Descobre qual trecho da rota corresponde
@@ -86,11 +144,14 @@ function Map() {
         trecho.andar.nome
       );
 
-      return labelAndar === andarSelecionado;
+      return (
+        labelAndar === andarSelecionado
+      );
     }) ?? -1;
 
   /*
-    Trecho que será exibido atualmente no mapa.
+    Trecho que será exibido atualmente
+    no mapa.
   */
   const trechoAtual =
     rota && indiceTrechoAtual >= 0
@@ -136,6 +197,70 @@ function Map() {
         ]
       : null;
 
+  /*
+    Identificação para andares intermediários.
+
+    Exemplo:
+    rota do 1º para o 3º andar.
+
+    No 2º andar mostramos:
+    "Continue subindo pela rampa"
+  */
+  const ehAndarIntermediario =
+    rota &&
+    trechoAtual &&
+    indiceTrechoAtual > 0 &&
+    indiceTrechoAtual <
+      rota.trechos.length - 1;
+
+  const pontoContinuidade =
+    ehAndarIntermediario &&
+    trechoAtual.caminho.length > 0
+      ? trechoAtual.caminho[
+          trechoAtual.caminho.length - 1
+        ]
+      : null;
+
+  const proximoTrecho =
+    rota && ehAndarIntermediario
+      ? rota.trechos[
+          indiceTrechoAtual + 1
+        ]
+      : null;
+
+  let direcaoContinuidade:
+    | "subindo"
+    | "descendo"
+    | null = null;
+
+  if (
+    trechoAtual &&
+    proximoTrecho
+  ) {
+    const andarAtual =
+      obterOrdemAndar(
+        trechoAtual.andar.nome
+      );
+
+    const proximoAndar =
+      obterOrdemAndar(
+        proximoTrecho.andar.nome
+      );
+
+    if (
+      andarAtual !== null &&
+      proximoAndar !== null
+    ) {
+      direcaoContinuidade =
+        proximoAndar > andarAtual
+          ? "subindo"
+          : "descendo";
+    }
+  }
+
+  /*
+    CARREGAMENTO DA ROTA
+  */
   useEffect(() => {
     async function carregarRota() {
       try {
@@ -143,15 +268,17 @@ function Map() {
           return;
         }
 
-        const resultado = await calcularRota(
-          codigoQr,
-          idDestino,
-          tipoRota
-        );
+        const resultado =
+          await calcularRota(
+            codigoQr,
+            idDestino,
+            tipoRota
+          );
 
         console.log(
           "ROTA RECEBIDA DO BACKEND:"
         );
+
         console.log(resultado);
 
         setRota(resultado);
@@ -161,10 +288,13 @@ function Map() {
           começa automaticamente no andar
           onde o usuário está.
         */
-        if (resultado.trechos.length > 0) {
+        if (
+          resultado.trechos.length > 0
+        ) {
           const primeiroAndar =
             obterLabelAndar(
-              resultado.trechos[0].andar.nome
+              resultado.trechos[0]
+                .andar.nome
             );
 
           if (primeiroAndar) {
@@ -182,7 +312,11 @@ function Map() {
     }
 
     carregarRota();
-  }, [codigoQr, idDestino, tipoRota]);
+  }, [
+    codigoQr,
+    idDestino,
+    tipoRota,
+  ]);
 
   return (
     <section className="page map-page">
@@ -192,7 +326,8 @@ function Map() {
       {rota && trechoAtual && (
         <div>
           <p>
-            Andar: {trechoAtual.andar.nome}
+            Andar:{" "}
+            {trechoAtual.andar.nome}
           </p>
 
           <p>
@@ -205,7 +340,10 @@ function Map() {
 
           <p>
             Pontos deste trecho:{" "}
-            {trechoAtual.caminho.length}
+            {
+              trechoAtual.caminho
+                .length
+            }
           </p>
 
           <p>
@@ -215,15 +353,17 @@ function Map() {
         </div>
       )}
 
-
-
+      {/* ÁREA DO MAPA */}
       <div className="map-zoom-area">
-
+        {/* BOTÕES DE ROTAÇÃO */}
         <div className="map-rotation-buttons">
           <button
             type="button"
             onClick={() =>
-              setRotacaoMapa((rotacao) => rotacao - 90)
+              setRotacaoMapa(
+                (rotacao) =>
+                  rotacao - 90
+              )
             }
             title="Girar para esquerda"
           >
@@ -233,7 +373,10 @@ function Map() {
           <button
             type="button"
             onClick={() =>
-              setRotacaoMapa((rotacao) => rotacao + 90)
+              setRotacaoMapa(
+                (rotacao) =>
+                  rotacao + 90
+              )
             }
             title="Girar para direita"
           >
@@ -246,10 +389,18 @@ function Map() {
           minScale={1}
           maxScale={5}
           centerOnInit
-          doubleClick={{ disabled: true }}
-          wheel={{ disabled: false }}
-          pinch={{ disabled: false }}
-          panning={{ disabled: false }}
+          doubleClick={{
+            disabled: true,
+          }}
+          wheel={{
+            disabled: false,
+          }}
+          pinch={{
+            disabled: false,
+          }}
+          panning={{
+            disabled: false,
+          }}
         >
           <TransformComponent
             wrapperClass="map-transform-wrapper"
@@ -266,8 +417,10 @@ function Map() {
                 className="map-image"
                 style={{
                   transform: `rotate(${rotacaoMapa}deg)`,
-                  transformOrigin: "center center",
-                  transition: "transform 0.3s ease",
+                  transformOrigin:
+                    "center center",
+                  transition:
+                    "transform 0.3s ease",
                 }}
                 xmlns="http://www.w3.org/2000/svg"
                 role="img"
@@ -277,20 +430,20 @@ function Map() {
                 <image
                   href={`/maps/${trechoAtual.andar.arquivoSvg}`}
                   x={
-                    trechoAtual.andar.viewBox
-                      .minX
+                    trechoAtual.andar
+                      .viewBox.minX
                   }
                   y={
-                    trechoAtual.andar.viewBox
-                      .minY
+                    trechoAtual.andar
+                      .viewBox.minY
                   }
                   width={
-                    trechoAtual.andar.viewBox
-                      .largura
+                    trechoAtual.andar
+                      .viewBox.largura
                   }
                   height={
-                    trechoAtual.andar.viewBox
-                      .altura
+                    trechoAtual.andar
+                      .viewBox.altura
                   }
                   preserveAspectRatio="xMidYMid meet"
                 />
@@ -328,16 +481,109 @@ function Map() {
                   />
                 </polyline>
 
+                {/* CONTINUAÇÃO ENTRE ANDARES */}
+                {pontoContinuidade &&
+                  direcaoContinuidade && (
+                    <g
+                      transform={`translate(${pontoContinuidade.x}, ${pontoContinuidade.y})`}
+                      style={{
+                        pointerEvents:
+                          "none",
+                      }}
+                    >
+                      {/* Mantém o aviso reto quando o mapa gira */}
+                      <g
+                        transform={`rotate(${-rotacaoMapa})`}
+                      >
+                        {/* Marcador */}
+                        <circle
+                          cx="0"
+                          cy="0"
+                          r="25"
+                          fill="#F97316"
+                          stroke="#ffffff"
+                          strokeWidth="6"
+                        />
+
+                        {/* Seta */}
+                        <text
+                          x="0"
+                          y="2"
+                          textAnchor="middle"
+                          dominantBaseline="middle"
+                          fontSize="34"
+                          fontWeight="700"
+                          fill="#ffffff"
+                        >
+                          {direcaoContinuidade ===
+                          "subindo"
+                            ? "↑"
+                            : "↓"}
+                        </text>
+
+                        {/* Balão */}
+                        <rect
+                          x="-165"
+                          y="-115"
+                          width="330"
+                          height="68"
+                          rx="22"
+                          fill="#F97316"
+                          stroke="#ffffff"
+                          strokeWidth="5"
+                        />
+
+                        {/* Ponta do balão */}
+                        <polygon
+                          points="-20,-50 20,-50 0,-24"
+                          fill="#F97316"
+                        />
+
+                        {/* Texto */}
+                        <text
+                          x="0"
+                          y="-88"
+                          textAnchor="middle"
+                          dominantBaseline="middle"
+                          fontSize="25"
+                          fontWeight="700"
+                          fill="#ffffff"
+                        >
+                          {direcaoContinuidade ===
+                          "subindo"
+                            ? "Continue subindo"
+                            : "Continue descendo"}
+                        </text>
+
+                        <text
+                          x="0"
+                          y="-63"
+                          textAnchor="middle"
+                          dominantBaseline="middle"
+                          fontSize="20"
+                          fontWeight="500"
+                          fill="#ffffff"
+                        >
+                          {obterTextoTipoRota(
+                            tipoRota
+                          )}
+                        </text>
+                      </g>
+                    </g>
+                  )}
+
                 {/* VOCÊ ESTÁ AQUI */}
                 {pontoPartida && (
                   <g
                     transform={`translate(${pontoPartida.x}, ${pontoPartida.y})`}
                     style={{
-                      pointerEvents: "none",
+                      pointerEvents:
+                        "none",
                     }}
                   >
-                    <g transform={`rotate(${-rotacaoMapa})`}>
-
+                    <g
+                      transform={`rotate(${-rotacaoMapa})`}
+                    >
                       <circle
                         cx="0"
                         cy="0"
@@ -381,7 +627,6 @@ function Map() {
                       >
                         Você está aqui
                       </text>
-
                     </g>
                   </g>
                 )}
@@ -391,10 +636,13 @@ function Map() {
                   <g
                     transform={`translate(${pontoDestino.x}, ${pontoDestino.y})`}
                     style={{
-                      pointerEvents: "none",
+                      pointerEvents:
+                        "none",
                     }}
                   >
-                    <g transform={`rotate(${-rotacaoMapa})`}>
+                    <g
+                      transform={`rotate(${-rotacaoMapa})`}
+                    >
                       {/* Anel pulsando */}
                       <circle
                         cx="0"
@@ -468,13 +716,13 @@ function Map() {
                     </g>
                   </g>
                 )}
-
               </svg>
             )}
           </TransformComponent>
         </TransformWrapper>
       </div>
 
+      {/* OPÇÕES DO MAPA */}
       <div className="map-options-card">
         {/* ESCOLHA DA ROTA */}
         <div className="route-choice-buttons">
@@ -497,7 +745,8 @@ function Map() {
                 )
               }
             >
-              VIA {tipo.toUpperCase()}
+              VIA{" "}
+              {tipo.toUpperCase()}
             </button>
           ))}
         </div>
