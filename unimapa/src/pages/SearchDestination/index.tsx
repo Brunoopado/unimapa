@@ -93,8 +93,6 @@ function SearchDestination() {
 
   return (
     <section className="page search-page">
-      <h1>Pesquisar Destino</h1>
-
       <div className="search-row">
         <input
           type="text"

@@ -320,38 +320,6 @@ function Map() {
 
   return (
     <section className="page map-page">
-      <h1>Mapa</h1>
-
-      {/* INFORMAÇÕES TEMPORÁRIAS DA ROTA */}
-      {rota && trechoAtual && (
-        <div>
-          <p>
-            Andar:{" "}
-            {trechoAtual.andar.nome}
-          </p>
-
-          <p>
-            Origem: {rota.origem}
-          </p>
-
-          <p>
-            Destino: {rota.destino}
-          </p>
-
-          <p>
-            Pontos deste trecho:{" "}
-            {
-              trechoAtual.caminho
-                .length
-            }
-          </p>
-
-          <p>
-            Trechos da rota:{" "}
-            {rota.totalTrechos}
-          </p>
-        </div>
-      )}
 
       {/* ÁREA DO MAPA */}
       <div className="map-zoom-area">

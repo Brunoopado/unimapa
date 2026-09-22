@@ -550,7 +550,15 @@ body {
   font-size: 0.9rem;
 }
 .map-page {
-  padding-bottom: 90px;
+  height: calc(100dvh - 72px - 72px - 40px);
+
+  display: flex;
+  flex-direction: column;
+
+  gap: 10px;
+
+  padding-bottom: 0;
+  overflow: hidden;
 }
 
 .map-page h1 {
@@ -559,8 +567,10 @@ body {
 
 .map-zoom-area {
   width: 100%;
-  height: calc(100vh - 300px);
-  min-height: 360px;
+
+  flex: 1;
+  min-height: 0;
+
   background: #ffffff;
   overflow: hidden;
   position: relative;
@@ -591,12 +601,23 @@ body {
   -webkit-user-drag: none;
 }
 
+/* OPÇÕES DO MAPA */
+
 .map-options-card {
-  margin-top: 14px;
+  flex-shrink: 0;
+
+  margin-top: 0;
+  padding: 10px;
+
   background: #ffffff;
-  border-radius: 16px;
-  padding: 12px;
+  border-radius: 18px;
+
+  box-shadow:
+    0 4px 14px rgba(0, 47, 120, 0.08);
 }
+
+
+/* TIPO DE ROTA */
 
 .route-choice-buttons {
   display: grid;
@@ -606,19 +627,50 @@ body {
 }
 
 .route-choice-buttons button {
+  min-height: 42px;
+
+  padding: 8px 10px;
+
   border: none;
-  background: #0031a0;
+  border-radius: 14px;
+
+  background: #1f4fa8;
   color: #ffffff;
-  border-radius: 999px;
-  padding: 9px 8px;
+
   font-size: 12px;
   font-weight: 700;
+
+  cursor: pointer;
+
+  box-shadow:
+    0 3px 8px rgba(31, 79, 168, 0.18);
+
+  transition:
+    transform 0.15s ease,
+    box-shadow 0.2s ease,
+    background-color 0.2s ease;
+}
+
+.route-choice-buttons button:hover {
+  background: #17438f;
+
+  box-shadow:
+    0 5px 12px rgba(31, 79, 168, 0.24);
+}
+
+.route-choice-buttons button:active {
+  transform: scale(0.97);
 }
 
 .route-choice-buttons button.active {
-  background: #f4791d;
-  color: #ffffff;
+  background: #f97316;
+
+  box-shadow:
+    0 4px 10px rgba(249, 115, 22, 0.28);
 }
+
+
+/* ANDARES */
 
 .floor-choice-buttons {
   display: grid;
@@ -627,18 +679,53 @@ body {
 }
 
 .floor-choice-buttons button {
+  min-height: 38px;
+
+  padding: 7px 8px;
+
   border: none;
-  background: #0031a0;
+  border-radius: 14px;
+
+  background: #2f5eac;
   color: #ffffff;
-  border-radius: 999px;
-  padding: 9px 8px;
+
   font-size: 13px;
   font-weight: 700;
+
+  cursor: pointer;
+
+  box-shadow:
+    0 2px 6px rgba(47, 94, 172, 0.16);
+
+  transition:
+    transform 0.15s ease,
+    box-shadow 0.2s ease,
+    background-color 0.2s ease;
+}
+
+.floor-choice-buttons button:hover:not(:disabled) {
+  background: #244f96;
+}
+
+.floor-choice-buttons button:active:not(:disabled) {
+  transform: scale(0.97);
 }
 
 .floor-choice-buttons button.active {
-  background: #f4791d;
+  background: #f97316;
+
+  box-shadow:
+    0 3px 8px rgba(249, 115, 22, 0.25);
+}
+
+.floor-choice-buttons button:disabled {
+  background: #c7d0dd;
   color: #ffffff;
+
+  box-shadow: none;
+
+  cursor: not-allowed;
+  opacity: 0.7;
 }
 
 /* Resultado da pesquisa de destinos */
@@ -938,5 +1025,36 @@ body {
 
   .scan-location-button {
     font-size: 0.95rem;
+  }
+}
+
+@media (max-height: 700px) {
+  .map-page {
+    gap: 6px;
+  }
+
+  .map-options-card {
+    padding: 8px;
+  }
+
+  .route-choice-buttons {
+    gap: 6px;
+    margin-bottom: 6px;
+  }
+
+  .route-choice-buttons button {
+    min-height: 36px;
+    padding: 6px;
+    font-size: 11px;
+  }
+
+  .floor-choice-buttons {
+    gap: 6px;
+  }
+
+  .floor-choice-buttons button {
+    min-height: 32px;
+    padding: 5px;
+    font-size: 12px;
   }
 }
