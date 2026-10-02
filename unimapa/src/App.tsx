@@ -7,6 +7,7 @@ import Map from "./pages/Map";
 import SearchDestination from "./pages/SearchDestination";
 import HowToUse from "./pages/HowToUse";
 import Settings from "./pages/Settings";
+import Scanner from "./pages/Scanner/Scanner";
 
 function App() {
   return (
@@ -21,6 +22,7 @@ function App() {
             <Route path="/search" element={<SearchDestination />} />
             <Route path="/how-to-use" element={<HowToUse />} />
             <Route path="/settings" element={<Settings />} />
+            <Route path="/scanner" element={<Scanner />} />
           </Routes>
         </main>
 
