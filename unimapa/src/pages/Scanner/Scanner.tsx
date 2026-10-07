@@ -18,7 +18,7 @@ function Scanner() {
       <h2>Escanear QR Code</h2>
 
       <p>
-        Aponte a câmera para um QR Code de localização.
+        Posicione o QR Code dentro da área indicada para identificar sua localização.
       </p>
 
       <QrScanner

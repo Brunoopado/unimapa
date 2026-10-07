@@ -1,4 +1,9 @@
 import { useEffect, useRef } from "react";
+import {
+  QrCode,
+  X,
+} from "lucide-react";
+
 import { Html5Qrcode } from "html5-qrcode";
 
 interface QrScannerProps {
@@ -10,28 +15,51 @@ function QrScanner({
   onScan,
   onClose,
 }: QrScannerProps) {
-  const scannerRef = useRef<Html5Qrcode | null>(null);
+  const scannerRef =
+    useRef<Html5Qrcode | null>(null);
 
   const onScanRef = useRef(onScan);
 
   const leuQrCodeRef = useRef(false);
 
-  /*
-    Mantém sempre a versão mais recente
-    da função recebida por props.
-  */
   useEffect(() => {
     onScanRef.current = onScan;
   }, [onScan]);
 
   useEffect(() => {
-    let componenteAtivo = true;
+    let cancelado = false;
 
-    const scanner = new Html5Qrcode("qr-reader");
+    let scanner:
+      | Html5Qrcode
+      | null = null;
 
-    scannerRef.current = scanner;
+    const timer = window.setTimeout(() => {
+      void iniciarCamera();
+    }, 100);
 
     async function iniciarCamera() {
+      if (cancelado) {
+        return;
+      }
+
+      const elemento =
+        document.getElementById(
+          "qr-reader"
+        );
+
+      if (!elemento) {
+        return;
+      }
+
+      elemento.innerHTML = "";
+
+      scanner =
+        new Html5Qrcode("qr-reader");
+
+      scannerRef.current = scanner;
+
+      leuQrCodeRef.current = false;
+
       try {
         await scanner.start(
           {
@@ -46,12 +74,9 @@ function QrScanner({
             },
           },
 
-          /*
-            QR CODE ENCONTRADO
-          */
           async (textoLido) => {
             if (
-              !componenteAtivo ||
+              cancelado ||
               leuQrCodeRef.current
             ) {
               return;
@@ -63,43 +88,41 @@ function QrScanner({
               textoLido.trim();
 
             try {
-              if (scanner.isScanning) {
+              if (
+                scanner &&
+                scanner.isScanning
+              ) {
                 await scanner.stop();
               }
+
+              scanner?.clear();
             } catch (error) {
               console.error(
-                "Erro ao parar a câmera:",
+                "Erro ao parar scanner:",
                 error
               );
             }
 
-            if (componenteAtivo) {
+            if (!cancelado) {
               onScanRef.current(codigo);
             }
           },
 
-          /*
-            Executado várias vezes enquanto
-            ainda não encontrou um QR.
-            Não precisamos fazer nada.
-          */
-          () => {}
+          () => {
+            // QR ainda não encontrado.
+          }
         );
 
-        /*
-          Pode acontecer de o componente
-          ser fechado enquanto a câmera
-          ainda estava sendo iniciada.
-        */
         if (
-          !componenteAtivo &&
+          cancelado &&
           scanner.isScanning
         ) {
           await scanner.stop();
+
           scanner.clear();
         }
       } catch (error) {
-        if (componenteAtivo) {
+        if (!cancelado) {
           console.error(
             "Erro ao abrir a câmera:",
             error
@@ -108,58 +131,66 @@ function QrScanner({
       }
     }
 
-    void iniciarCamera();
-
-    /*
-      LIMPEZA AO SAIR DA PÁGINA
-    */
     return () => {
-      componenteAtivo = false;
+      cancelado = true;
 
-      if (scannerRef.current === scanner) {
+      window.clearTimeout(timer);
+
+      const scannerAtual = scanner;
+
+      if (
+        scannerRef.current ===
+        scannerAtual
+      ) {
         scannerRef.current = null;
       }
 
-      if (scanner.isScanning) {
-        scanner
+      if (!scannerAtual) {
+        return;
+      }
+
+      if (scannerAtual.isScanning) {
+        void scannerAtual
           .stop()
           .then(() => {
             try {
-              scanner.clear();
+              scannerAtual.clear();
             } catch {
-              // Scanner já foi limpo.
+              // Scanner já limpo.
             }
           })
           .catch(() => {
-            // Ignora erro ao desmontar.
+            try {
+              scannerAtual.clear();
+            } catch {
+              // Ignora erro.
+            }
           });
 
         return;
       }
 
       try {
-        scanner.clear();
+        scannerAtual.clear();
       } catch {
-        // Scanner ainda não estava iniciado.
+        // Scanner ainda não iniciado.
       }
     };
   }, []);
 
-  /*
-    BOTÃO CANCELAR
-  */
   async function handleClose() {
     const scanner =
       scannerRef.current;
 
     try {
-      if (scanner?.isScanning) {
+      if (
+        scanner &&
+        scanner.isScanning
+      ) {
         await scanner.stop();
       }
 
-      if (scanner) {
-        scanner.clear();
-      }
+      scanner?.clear();
     } catch (error) {
       console.error(
         "Erro ao fechar a câmera:",
@@ -174,14 +205,48 @@ function QrScanner({
 
   return (
     <div className="qr-scanner">
-      <div id="qr-reader" />
+      <div className="scanner-card">
+        
+
+        <div className="scanner-camera-area">
+          <div id="qr-reader" />
+
+          <div
+            className="scanner-overlay"
+            aria-hidden="true"
+          >
+            <span className="scanner-corner scanner-corner-tl" />
+            <span className="scanner-corner scanner-corner-tr" />
+            <span className="scanner-corner scanner-corner-bl" />
+            <span className="scanner-corner scanner-corner-br" />
+
+            <span className="scanner-line" />
+          </div>
+        </div>
+
+        <div className="scanner-instruction">
+          <QrCode size={22} />
+
+          <div>
+            <strong>
+              Posicione o QR Code na área indicada
+            </strong>
+
+            <span>
+              Mantenha o código centralizado e evite
+              movimentar a câmera.
+            </span>
+          </div>
+        </div>
+      </div>
 
       <button
         type="button"
         className="qr-cancel-button"
         onClick={handleClose}
       >
-        Cancelar
+        <X size={20} />
+        Cancelar leitura
       </button>
     </div>
   );
