@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import {
-  TransformWrapper,
   TransformComponent,
+  TransformWrapper,
 } from "react-zoom-pan-pinch";
 import { useSearchParams } from "react-router-dom";
 
@@ -15,12 +15,24 @@ import type {
 } from "../../services/api";
 
 import {
+  getCurrentLocation,
   getRoutePreference,
 } from "../../services/cookieService";
+
+import {
+  clearActiveRoute,
+  getActiveRoute,
+  saveActiveRoute,
+} from "../../services/routeSessionService";
 
 import type {
   RotaCalculada,
 } from "../../types/rota";
+
+
+/* =========================================================
+   TIPOS
+========================================================= */
 
 type Andar =
   | "Térreo"
@@ -32,6 +44,11 @@ type TipoRota =
   | "Rampa"
   | "Elevador"
   | "Escada";
+
+
+/* =========================================================
+   FUNÇÕES AUXILIARES
+========================================================= */
 
 /*
   Converte a preferência salva no cookie
@@ -51,6 +68,7 @@ function obterTipoRotaPreferido(): TipoRota {
 
   return "Escada";
 }
+
 
 /*
   Converte o nome do andar vindo
@@ -78,6 +96,7 @@ function obterLabelAndar(
   return null;
 }
 
+
 /*
   Ordem numérica dos andares para
   descobrir se o usuário está
@@ -94,7 +113,7 @@ function obterOrdemAndar(
   }
 
   const ordem: Record<Andar, number> = {
-    "Térreo": 0,
+    Térreo: 0,
     "1º": 1,
     "2º": 2,
     "3º": 3,
@@ -102,6 +121,7 @@ function obterOrdemAndar(
 
   return ordem[andar];
 }
+
 
 /*
   Texto mostrado na continuação
@@ -121,9 +141,20 @@ function obterTextoTipoRota(
   return "pela rampa";
 }
 
+
+/* =========================================================
+   COMPONENTE
+========================================================= */
+
 function Map() {
-  const [searchParams] =
-    useSearchParams();
+  /* =======================================================
+     PARÂMETROS DA URL
+  ======================================================= */
+
+  const [
+    searchParams,
+    setSearchParams,
+  ] = useSearchParams();
 
   const codigoQr =
     searchParams.get("codigoQr");
@@ -131,13 +162,17 @@ function Map() {
   const idDestino =
     searchParams.get("idDestino");
 
-  /*
-    ESTADOS
-  */
-  const [rota, setRota] =
-    useState<RotaCalculada | null>(
-      null
-    );
+
+  /* =======================================================
+     ESTADOS
+  ======================================================= */
+
+  const [
+    rota,
+    setRota,
+  ] = useState<RotaCalculada | null>(
+    null
+  );
 
   const [
     andaresDisponiveis,
@@ -161,6 +196,11 @@ function Map() {
     setRotacaoMapa,
   ] = useState(0);
 
+
+  /* =======================================================
+     TRECHO DO ANDAR SELECIONADO
+  ======================================================= */
+
   /*
     Descobre qual trecho da rota
     corresponde ao andar selecionado.
@@ -180,8 +220,10 @@ function Map() {
       }
     ) ?? -1;
 
+
   /*
     Trecho atual da rota.
+
     Só existe quando há uma rota.
   */
   const trechoAtual =
@@ -191,6 +233,11 @@ function Map() {
           indiceTrechoAtual
         ]
       : null;
+
+
+  /* =======================================================
+     MAPA EXIBIDO
+  ======================================================= */
 
   /*
     Quando NÃO existe rota,
@@ -205,6 +252,7 @@ function Map() {
         ) === andarSelecionado
     ) ?? null;
 
+
   /*
     Se existe rota:
     mostra o mapa daquele trecho.
@@ -216,6 +264,11 @@ function Map() {
   const mapaExibido =
     trechoAtual?.andar ??
     andarPadraoAtual;
+
+
+  /* =======================================================
+     LINHA DA ROTA
+  ======================================================= */
 
   /*
     Pontos utilizados pela linha
@@ -231,6 +284,11 @@ function Map() {
           .join(" ")
       : "";
 
+
+  /* =======================================================
+     PONTO DE PARTIDA
+  ======================================================= */
+
   /*
     "Você está aqui"
   */
@@ -240,6 +298,11 @@ function Map() {
     trechoAtual.caminho.length > 0
       ? trechoAtual.caminho[0]
       : null;
+
+
+  /* =======================================================
+     PONTO DE DESTINO
+  ======================================================= */
 
   /*
     "Chegada"
@@ -251,10 +314,14 @@ function Map() {
       rota.trechos.length - 1 &&
     trechoAtual.caminho.length > 0
       ? trechoAtual.caminho[
-          trechoAtual.caminho
-            .length - 1
+          trechoAtual.caminho.length - 1
         ]
       : null;
+
+
+  /* =======================================================
+     CONTINUIDADE ENTRE ANDARES
+  ======================================================= */
 
   /*
     Verifica se o usuário está
@@ -267,14 +334,15 @@ function Map() {
     indiceTrechoAtual <
       rota.trechos.length - 1;
 
+
   const pontoContinuidade =
     ehAndarIntermediario &&
     trechoAtual.caminho.length > 0
       ? trechoAtual.caminho[
-          trechoAtual.caminho
-            .length - 1
+          trechoAtual.caminho.length - 1
         ]
       : null;
+
 
   const proximoTrecho =
     rota &&
@@ -284,10 +352,12 @@ function Map() {
         ]
       : null;
 
+
   let direcaoContinuidade:
     | "subindo"
     | "descendo"
     | null = null;
+
 
   if (
     trechoAtual &&
@@ -314,9 +384,120 @@ function Map() {
     }
   }
 
-  /*
-    CARREGA OS MAPAS DOS ANDARES
 
+  /* =======================================================
+     PERSISTÊNCIA DA ROTA
+  ======================================================= */
+
+  useEffect(() => {
+    const codigoQrUrl =
+      searchParams.get("codigoQr");
+
+    const idDestinoUrl =
+      searchParams.get("idDestino");
+
+    const tipoRotaUrl =
+      searchParams.get(
+        "tipoRota"
+      ) as
+        | "Rampa"
+        | "Elevador"
+        | "Escada"
+        | null;
+
+    const currentLocation =
+      getCurrentLocation();
+
+
+    /*
+      CASO 1:
+
+      Chegamos no mapa
+      com uma nova rota.
+    */
+    if (
+      codigoQrUrl &&
+      idDestinoUrl
+    ) {
+      saveActiveRoute({
+        codigoQr:
+          codigoQrUrl,
+
+        idDestino:
+          idDestinoUrl,
+
+        tipoRota:
+          tipoRotaUrl ??
+          "Rampa",
+      });
+
+      return;
+    }
+
+
+    /*
+      CASO 2:
+
+      Entramos no mapa
+      pela barra inferior.
+
+      Tenta recuperar
+      a rota anterior.
+    */
+    const rotaSalva =
+      getActiveRoute();
+
+    if (!rotaSalva) {
+      return;
+    }
+
+
+    /*
+      Se o QR atual mudou,
+      não devemos continuar
+      usando a rota antiga.
+    */
+    if (
+      currentLocation &&
+      currentLocation.pointCode !==
+        rotaSalva.codigoQr
+    ) {
+      clearActiveRoute();
+
+      return;
+    }
+
+
+    /*
+      Recupera os dados da
+      última rota para a URL.
+    */
+    setSearchParams(
+      {
+        codigoQr:
+          rotaSalva.codigoQr,
+
+        idDestino:
+          rotaSalva.idDestino,
+
+        tipoRota:
+          rotaSalva.tipoRota,
+      },
+      {
+        replace: true,
+      }
+    );
+  }, [
+    searchParams,
+    setSearchParams,
+  ]);
+
+
+  /* =======================================================
+     CARREGA OS MAPAS DOS ANDARES
+  ======================================================= */
+
+  /*
     Esse carregamento permite usar
     /map mesmo sem existir uma rota.
   */
@@ -340,17 +521,21 @@ function Map() {
     carregarAndares();
   }, []);
 
-  /*
-    CARREGA A ROTA
 
-    Só calcula quando codigoQr e
-    idDestino existem na URL.
+  /* =======================================================
+     CARREGA A ROTA
+  ======================================================= */
+
+  /*
+    Só calcula quando codigoQr
+    e idDestino existem na URL.
   */
   useEffect(() => {
     async function carregarRota() {
       try {
         /*
           Sem origem/destino:
+
           estamos apenas explorando
           os mapas.
         */
@@ -359,8 +544,10 @@ function Map() {
           !idDestino
         ) {
           setRota(null);
+
           return;
         }
+
 
         const resultado =
           await calcularRota(
@@ -369,13 +556,16 @@ function Map() {
             tipoRota
           );
 
+
         console.log(
           "ROTA RECEBIDA DO BACKEND:"
         );
 
         console.log(resultado);
 
+
         setRota(resultado);
+
 
         /*
           Ao carregar uma rota,
@@ -413,11 +603,20 @@ function Map() {
     tipoRota,
   ]);
 
+
+  /* =======================================================
+     JSX
+  ======================================================= */
+
   return (
     <section className="page map-page">
-      {/* ÁREA DO MAPA */}
+      {/* ================================================
+          ÁREA DO MAPA
+      ================================================= */}
+
       <div className="map-zoom-area">
         {/* BOTÕES DE ROTAÇÃO */}
+
         <div className="map-rotation-buttons">
           <button
             type="button"
@@ -445,6 +644,11 @@ function Map() {
             ↻
           </button>
         </div>
+
+
+        {/* ================================================
+            ZOOM E MOVIMENTAÇÃO
+        ================================================= */}
 
         <TransformWrapper
           initialScale={1}
@@ -478,19 +682,29 @@ function Map() {
                 `}
                 className="map-image"
                 style={{
-                  transform: `rotate(${rotacaoMapa}deg)`,
+                  transform:
+                    `rotate(${rotacaoMapa}deg)`,
+
                   transformOrigin:
                     "center center",
+
                   transition:
                     "transform 0.3s ease",
                 }}
                 xmlns="http://www.w3.org/2000/svg"
                 role="img"
-                aria-label={`Mapa do ${mapaExibido.nome}`}
+                aria-label={
+                  `Mapa do ${mapaExibido.nome}`
+                }
               >
-                {/* PLANTA DO ANDAR */}
+                {/* ========================================
+                    PLANTA DO ANDAR
+                ========================================= */}
+
                 <image
-                  href={`/maps/${mapaExibido.arquivoSvg}`}
+                  href={
+                    `/maps/${mapaExibido.arquivoSvg}`
+                  }
                   x={
                     mapaExibido.viewBox
                       .minX
@@ -510,10 +724,15 @@ function Map() {
                   preserveAspectRatio="xMidYMid meet"
                 />
 
-                {/* ROTA */}
+
+                {/* ========================================
+                    ROTA
+                ========================================= */}
+
                 {trechoAtual && (
                   <>
                     {/* ROTA FIXA */}
+
                     <polyline
                       points={
                         pontosPolyline
@@ -525,7 +744,9 @@ function Map() {
                       strokeLinejoin="round"
                     />
 
+
                     {/* BRILHO ANIMADO */}
+
                     <polyline
                       key={
                         pontosPolyline
@@ -554,20 +775,29 @@ function Map() {
                   </>
                 )}
 
-                {/* CONTINUAÇÃO ENTRE ANDARES */}
+
+                {/* ========================================
+                    CONTINUAÇÃO ENTRE ANDARES
+                ========================================= */}
+
                 {pontoContinuidade &&
                   direcaoContinuidade && (
                     <g
-                      transform={`translate(${pontoContinuidade.x}, ${pontoContinuidade.y})`}
+                      transform={
+                        `translate(${pontoContinuidade.x}, ${pontoContinuidade.y})`
+                      }
                       style={{
                         pointerEvents:
                           "none",
                       }}
                     >
                       <g
-                        transform={`rotate(${-rotacaoMapa})`}
+                        transform={
+                          `rotate(${-rotacaoMapa})`
+                        }
                       >
                         {/* MARCADOR */}
+
                         <circle
                           cx="0"
                           cy="0"
@@ -577,7 +807,9 @@ function Map() {
                           strokeWidth="6"
                         />
 
+
                         {/* SETA */}
+
                         <text
                           x="0"
                           y="2"
@@ -593,7 +825,9 @@ function Map() {
                             : "↓"}
                         </text>
 
+
                         {/* BALÃO */}
+
                         <rect
                           x="-165"
                           y="-115"
@@ -642,17 +876,25 @@ function Map() {
                     </g>
                   )}
 
-                {/* VOCÊ ESTÁ AQUI */}
+
+                {/* ========================================
+                    VOCÊ ESTÁ AQUI
+                ========================================= */}
+
                 {pontoPartida && (
                   <g
-                    transform={`translate(${pontoPartida.x}, ${pontoPartida.y})`}
+                    transform={
+                      `translate(${pontoPartida.x}, ${pontoPartida.y})`
+                    }
                     style={{
                       pointerEvents:
                         "none",
                     }}
                   >
                     <g
-                      transform={`rotate(${-rotacaoMapa})`}
+                      transform={
+                        `rotate(${-rotacaoMapa})`
+                      }
                     >
                       <circle
                         cx="0"
@@ -701,19 +943,28 @@ function Map() {
                   </g>
                 )}
 
-                {/* PIN DE CHEGADA */}
+
+                {/* ========================================
+                    PIN DE CHEGADA
+                ========================================= */}
+
                 {pontoDestino && (
                   <g
-                    transform={`translate(${pontoDestino.x}, ${pontoDestino.y})`}
+                    transform={
+                      `translate(${pontoDestino.x}, ${pontoDestino.y})`
+                    }
                     style={{
                       pointerEvents:
                         "none",
                     }}
                   >
                     <g
-                      transform={`rotate(${-rotacaoMapa})`}
+                      transform={
+                        `rotate(${-rotacaoMapa})`
+                      }
                     >
                       {/* ANEL PULSANDO */}
+
                       <circle
                         cx="0"
                         cy="0"
@@ -738,7 +989,9 @@ function Map() {
                         />
                       </circle>
 
+
                       {/* PIN ANIMADO */}
+
                       <g>
                         <animateTransform
                           attributeName="transform"
@@ -792,11 +1045,18 @@ function Map() {
         </TransformWrapper>
       </div>
 
-      {/* OPÇÕES DO MAPA */}
+
+      {/* ==================================================
+          OPÇÕES DO MAPA
+      =================================================== */}
+
       <div className="map-options-card">
-        {/* PREFERÊNCIA DE ROTA
+        {/* ================================================
+            PREFERÊNCIA DE ROTA
+
             Só aparece quando existe rota calculada.
-        */}
+        ================================================= */}
+
         {rota && (
           <div className="route-choice-buttons">
             {[
@@ -825,7 +1085,11 @@ function Map() {
           </div>
         )}
 
-        {/* ESCOLHA DO ANDAR */}
+
+        {/* ================================================
+            ESCOLHA DO ANDAR
+        ================================================= */}
+
         <div className="floor-choice-buttons">
           {(
             [
@@ -847,12 +1111,17 @@ function Map() {
                   ) === andar
               );
 
+
             /*
               COM ROTA:
-              permite somente andares da rota.
+
+              permite somente andares
+              da rota.
 
               SEM ROTA:
-              permite todos os mapas existentes.
+
+              permite todos os mapas
+              existentes.
             */
             const podeSelecionar =
               rota
@@ -863,6 +1132,7 @@ function Map() {
                       ) === andar
                   )
                 : existeMapa;
+
 
             return (
               <button

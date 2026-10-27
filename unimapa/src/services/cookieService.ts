@@ -44,6 +44,10 @@ export function getRoutePreference(): RoutePreference {
   return "stairs";
 }
 
+export function clearCurrentLocation() {
+  Cookies.remove(CURRENT_LOCATION_COOKIE);
+}
+
 export function clearUserCookies() {
   Cookies.remove(CURRENT_LOCATION_COOKIE);
   Cookies.remove(ROUTE_PREFERENCE_COOKIE);

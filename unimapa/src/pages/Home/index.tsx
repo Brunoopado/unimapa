@@ -5,6 +5,7 @@ import {
   MapPin,
   QrCode,
   Search,
+  X,
 } from "lucide-react";
 
 import { Link } from "react-router-dom";
@@ -12,9 +13,14 @@ import { Link } from "react-router-dom";
 import { buscarQrPorCodigo } from "../../services/api";
 
 import {
+  clearCurrentLocation,
   getCurrentLocation,
   saveCurrentLocation,
 } from "../../services/cookieService";
+
+import {
+  clearActiveRoute,
+} from "../../services/routeSessionService";
 
 import type { CurrentLocation } from "../../types/location";
 
@@ -78,6 +84,15 @@ function Home() {
     }
   }
 
+  function handleClearLocation() {
+  clearCurrentLocation();
+  clearActiveRoute();
+
+  setCurrentLocation(null);
+  setReferenceCode("");
+  setMessage("");
+}
+
   return (
     <section className="page home-page">
       {/* LOCALIZAÇÃO */}
@@ -96,13 +111,26 @@ function Home() {
         >
           {currentLocation ? (
             <>
-              <strong>
-                {currentLocation.name}
-              </strong>
+             <div className="current-location-details">
+              <div className="current-location-text">
+                <strong>
+                  {currentLocation.name}
+                </strong>
 
-              <span>
-                {currentLocation.floor}
-              </span>
+                <span>
+                  {currentLocation.floor}
+                </span>
+              </div>
+
+              <button
+                type="button"
+                className="clear-location-button"
+                onClick={handleClearLocation}
+              >
+                <X size={16} />
+                Limpar
+              </button>
+            </div>
             </>
           ) : (
             <Link
