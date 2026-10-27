@@ -16,7 +16,7 @@ export type RespostaQr = {
 
 const API_URL =
   import.meta.env.VITE_API_URL ??
-  "http://localhost:3001/api";
+  "/api";
 
 export async function buscarRotaTeste(): Promise<RotaCalculada> {
   const response = await fetch(
