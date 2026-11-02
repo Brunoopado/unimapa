@@ -1516,3 +1516,148 @@ body {
   border-color: #fdba74;
   background: #fff7ed;
 }
+
+
+/* =========================================================
+   INFORMAÇÕES DA ROTA
+========================================================= */
+
+.map-route-info {
+  width: 100%;
+
+  display: flex;
+  flex-direction: column;
+
+  gap: 5px;
+
+  flex-shrink: 0;
+}
+
+
+/* Cards */
+
+.map-route-summary,
+.map-route-instruction {
+  width: 100%;
+
+  padding: 8px 11px;
+
+  display: flex;
+  flex-direction: column;
+
+  gap: 3px;
+
+  border: 1px solid #dce6f3;
+  border-radius: 12px;
+
+  background: #ffffff;
+
+  box-shadow:
+    0 2px 8px rgba(15, 23, 42, 0.06);
+
+  box-sizing: border-box;
+}
+
+
+/* Título */
+
+.map-info-label {
+  color: #64748b;
+
+  font-size: 0.62rem;
+  font-weight: 700;
+
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+
+/* Rota */
+
+.map-route-line {
+  width: 100%;
+  min-width: 0;
+
+  display: grid;
+
+  grid-template-columns:
+    minmax(0, auto)
+    auto
+    minmax(0, 1fr);
+
+  align-items: start;
+
+  gap: 6px;
+}
+
+
+.map-route-origin {
+  color: #07326f;
+
+  font-size: 0.75rem;
+  font-weight: 700;
+  line-height: 1.2;
+}
+
+
+.map-route-arrow {
+  color: #94a3b8;
+
+  font-size: 0.9rem;
+  font-weight: 700;
+}
+
+
+.map-route-destination {
+  min-width: 0;
+
+  color: #07326f;
+
+  font-size: 0.75rem;
+  font-weight: 700;
+  line-height: 1.2;
+
+  overflow: hidden;
+
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+}
+
+
+/* Instrução */
+
+.map-route-instruction p {
+  margin: 0;
+
+  color: #334155;
+
+  font-size: 0.74rem;
+  font-weight: 600;
+  line-height: 1.3;
+
+  overflow: hidden;
+
+  display: -webkit-box;
+  -webkit-line-clamp: 3;
+  -webkit-box-orient: vertical;
+}
+
+
+/* Mobile */
+
+@media (max-width: 600px) {
+  .map-route-summary,
+  .map-route-instruction {
+    padding: 7px 10px;
+  }
+
+  .map-route-origin,
+  .map-route-destination {
+    font-size: 0.72rem;
+  }
+
+  .map-route-instruction p {
+    font-size: 0.71rem;
+  }
+}
