@@ -1,5 +1,6 @@
 import Cookies from "js-cookie";
 import type { CurrentLocation, RoutePreference } from "../types/location";
+import { clearActiveRoute } from "./routeSessionService";
 
 const CURRENT_LOCATION_COOKIE = "unimapa_current_location";
 const ROUTE_PREFERENCE_COOKIE = "unimapa_route_preference";
@@ -51,4 +52,6 @@ export function clearCurrentLocation() {
 export function clearUserCookies() {
   Cookies.remove(CURRENT_LOCATION_COOKIE);
   Cookies.remove(ROUTE_PREFERENCE_COOKIE);
+
+  clearActiveRoute();
 }
