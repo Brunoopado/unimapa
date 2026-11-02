@@ -69,14 +69,59 @@ export async function calcularRota(
   return dados;
 }
 
-export async function pesquisarDestinos(
-  pesquisa: string
-): Promise<RespostaDestinos> {
-  const response = await fetch(
-    `${API_URL}/destinos?q=${encodeURIComponent(
-      pesquisa
-    )}`
+type PesquisarDestinosParams = {
+  pesquisa?: string;
+  andar?: string;
+  bloco?: string;
+  pagina?: number;
+  limite?: number;
+};
+
+export async function pesquisarDestinos({
+  pesquisa = "",
+  andar = "",
+  bloco = "",
+  pagina = 1,
+  limite = 20,
+}: PesquisarDestinosParams): Promise<RespostaDestinos> {
+  const params =
+    new URLSearchParams();
+
+  if (pesquisa.trim()) {
+    params.set(
+      "q",
+      pesquisa.trim()
+    );
+  }
+
+  if (andar) {
+    params.set(
+      "andar",
+      andar
+    );
+  }
+
+  if (bloco) {
+    params.set(
+      "bloco",
+      bloco
+    );
+  }
+
+  params.set(
+    "pagina",
+    String(pagina)
   );
+
+  params.set(
+    "limite",
+    String(limite)
+  );
+
+  const response =
+    await fetch(
+      `${API_URL}/destinos?${params.toString()}`
+    );
 
   if (!response.ok) {
     throw new Error(

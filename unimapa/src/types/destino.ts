@@ -9,5 +9,13 @@ export type Destino = {
 
 export type RespostaDestinos = {
   status: string;
+
   destinos: Destino[];
+
+  paginacao: {
+    pagina: number;
+    limite: number;
+    total: number;
+    totalPaginas: number;
+  };
 };

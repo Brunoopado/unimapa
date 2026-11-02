@@ -704,38 +704,141 @@ console.log(
 
 app.get("/api/destinos", async (req, res) => {
   try {
-    const pesquisa = String(req.query.q ?? "").trim();
+    const pesquisa =
+      String(req.query.q ?? "").trim();
 
-    const termo = `%${pesquisa}%`;
+    const andar =
+      String(req.query.andar ?? "").trim();
 
-    const [destinos] = await pool.execute(
-      `
-        SELECT
-          id_destino,
-          nome,
-          bloco,
-          codigo_andar,
-          andar,
-          id_no_chegada
-        FROM vw_destinos
-        WHERE nome LIKE ?
-           OR id_destino LIKE ?
-        ORDER BY nome
-        LIMIT 50
-      `,
-      [termo, termo]
+    const bloco =
+      String(req.query.bloco ?? "").trim();
+
+    const pagina =
+      Math.max(
+        Number(req.query.pagina) || 1,
+        1
+      );
+
+    const limite = Math.min(
+      Math.max(
+        Number(req.query.limite) || 20,
+        1
+      ),
+      20
     );
+
+    const offset =
+      (pagina - 1) * limite;
+
+    const filtros = [];
+    const parametros = [];
+
+    if (pesquisa) {
+      filtros.push(
+        "(nome LIKE ? OR id_destino LIKE ?)"
+      );
+
+      const termo =
+        `%${pesquisa}%`;
+
+      parametros.push(
+        termo,
+        termo
+      );
+    }
+
+    if (andar) {
+      filtros.push(
+        "codigo_andar = ?"
+      );
+
+      parametros.push(
+        andar
+      );
+    }
+
+    if (bloco) {
+      filtros.push(
+        "bloco = ?"
+      );
+
+      parametros.push(
+        bloco
+      );
+    }
+
+    const where =
+      filtros.length > 0
+        ? `WHERE ${filtros.join(" AND ")}`
+        : "";
+
+    // Total de resultados
+    const [resultadoTotal] =
+      await pool.execute(
+        `
+          SELECT
+            COUNT(*) AS total
+          FROM vw_destinos
+          ${where}
+        `,
+        parametros
+      );
+
+    const total =
+      Number(
+        resultadoTotal[0].total
+      );
+
+    const totalPaginas =
+      Math.max(
+        Math.ceil(
+          total / limite
+        ),
+        1
+      );
+
+    // Destinos da página atual
+    const [destinos] =
+      await pool.execute(
+        `
+          SELECT
+            id_destino,
+            nome,
+            bloco,
+            codigo_andar,
+            andar,
+            id_no_chegada
+          FROM vw_destinos
+          ${where}
+          ORDER BY nome
+          LIMIT ${limite}
+          OFFSET ${offset}
+        `,
+        parametros
+      );
 
     return res.json({
       status: "ok",
+
       destinos,
+
+      paginacao: {
+        pagina,
+        limite,
+        total,
+        totalPaginas,
+      },
     });
   } catch (error) {
-    console.error(error);
+    console.error(
+      "Erro ao buscar destinos:",
+      error
+    );
 
     return res.status(500).json({
       status: "erro",
-      mensagem: error.message,
+      mensagem:
+        "Erro ao buscar destinos.",
     });
   }
 });
